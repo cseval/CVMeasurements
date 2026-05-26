@@ -4,3 +4,12 @@ __pycache__/
 *.py[cod]
 .venv/
 .DS_Store
+
+# JS / Node
+node_modules/
+dist/
+.env
+.env.local
+
+# Generated assets
+marker/

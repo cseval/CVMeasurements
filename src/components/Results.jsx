@@ -41,8 +41,8 @@ export default function Results({ results, error, warnings, onRetry }) {
           </div>
         ))}
 
-        {results?.pxPerCm && (
-          <p className="scale-note">Scale: {results.pxPerCm} px / cm</p>
+        {results?.px_per_cm && (
+          <p className="scale-note">Scale: {results.px_per_cm} px / cm</p>
         )}
       </div>
 
