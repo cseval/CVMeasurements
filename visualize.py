@@ -115,20 +115,20 @@ def _draw_wingspan(img: np.ndarray, pose_lms, w: int, h: int,
 
 def _draw_hand_width(img: np.ndarray, hand_lms, w: int, h: int,
                      hand_width_cm: float) -> None:
-    """Draw the index-MCP to pinky-MCP hand-width line."""
-    idx_mcp   = hand_lms.landmark[5]
-    pinky_mcp = hand_lms.landmark[17]
+    """Draw the thumb tip to pinky tip hand span line."""
+    thumb_tip = hand_lms.landmark[4]
+    pinky_tip = hand_lms.landmark[20]
 
-    pt_idx   = (int(idx_mcp.x   * w), int(idx_mcp.y   * h))
-    pt_pinky = (int(pinky_mcp.x * w), int(pinky_mcp.y * h))
+    pt_thumb = (int(thumb_tip.x * w), int(thumb_tip.y * h))
+    pt_pinky = (int(pinky_tip.x * w), int(pinky_tip.y * h))
 
-    cv2.line(img, pt_idx, pt_pinky, COLOR_HAND, LINE_THICKNESS)
-    cv2.circle(img, pt_idx,   DOT_RADIUS, COLOR_LANDMARK, -1)
+    cv2.line(img, pt_thumb, pt_pinky, COLOR_HAND, LINE_THICKNESS)
+    cv2.circle(img, pt_thumb, DOT_RADIUS, COLOR_LANDMARK, -1)
     cv2.circle(img, pt_pinky, DOT_RADIUS, COLOR_LANDMARK, -1)
 
-    mid_x = (pt_idx[0] + pt_pinky[0]) // 2
-    mid_y = (pt_idx[1] + pt_pinky[1]) // 2
-    _label(img, f"hand  {hand_width_cm:.1f} cm", (mid_x, mid_y - 16),
+    mid_x = (pt_thumb[0] + pt_pinky[0]) // 2
+    mid_y = (pt_thumb[1] + pt_pinky[1]) // 2
+    _label(img, f"hand span  {hand_width_cm:.1f} cm", (mid_x, mid_y - 16),
            COLOR_HAND)
 
 

@@ -16,9 +16,9 @@ export default function Results({ results, error, warnings, onRetry }) {
   }
 
   const measurements = [
-    { key: 'height_cm',     label: 'Height',     unit: 'cm', cls: 'height'   },
-    { key: 'wingspan_cm',   label: 'Wingspan',   unit: 'cm', cls: 'wingspan' },
-    { key: 'hand_width_cm', label: 'Hand Width', unit: 'cm', cls: 'hand'     },
+    { key: 'height_cm',     label: 'Height',    unit: 'cm', cls: 'height'   },
+    { key: 'wingspan_cm',   label: 'Wingspan',  unit: 'cm', cls: 'wingspan' },
+    { key: 'hand_width_cm', label: 'Hand Span', unit: 'cm', cls: 'hand'     },
   ];
 
   return (
@@ -31,6 +31,14 @@ export default function Results({ results, error, warnings, onRetry }) {
         {warnings?.map((w, i) => (
           <div key={i} className="error-card" style={{ fontSize: 13 }}>{w}</div>
         ))}
+
+        {results?.debug_image && (
+          <img
+            src={`data:image/jpeg;base64,${results.debug_image}`}
+            alt="Annotated measurement"
+            style={{ width: '100%', borderRadius: 8, marginBottom: 12 }}
+          />
+        )}
 
         {measurements.map(({ key, label, unit, cls }) => (
           <div key={key} className={`measurement-card ${results?.[key] != null ? cls : 'missing'}`}>

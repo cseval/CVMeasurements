@@ -88,11 +88,10 @@ def measure_wingspan(
 
 def measure_hand_width(hand_lms, frame_w: int, frame_h: int, px_per_cm: float) -> float:
     """
-    Index-MCP to pinky-MCP distance in cm (knuckle width across palm).
-    Requires hand flat with fingers together, marker in same plane.
-    Landmark 5  = index finger MCP
-    Landmark 17 = pinky MCP
+    Thumb tip to pinky tip distance in cm (open hand span).
+    Landmark 4  = thumb tip
+    Landmark 20 = pinky tip
     """
-    idx_mcp   = hand_lms.landmark[5]
-    pinky_mcp = hand_lms.landmark[17]
-    return _px_dist(idx_mcp, pinky_mcp, frame_w, frame_h) / px_per_cm
+    thumb_tip = hand_lms.landmark[4]
+    pinky_tip = hand_lms.landmark[20]
+    return _px_dist(thumb_tip, pinky_tip, frame_w, frame_h) / px_per_cm

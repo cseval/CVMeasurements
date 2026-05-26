@@ -183,11 +183,11 @@ def run(image_path: str, debug: bool = False) -> tuple[dict, str | None]:
                       "Try better lighting or move hands closer to camera.")
 
     if debug:
+        import base64
         diag = draw_diagnostics(frame, marker_corners, pose_lms, hand_lms,
                                 all_hands_lms, results)
-        out_path = Path(image_path).with_stem(Path(image_path).stem + "_debug").with_suffix(".jpg")
-        cv2.imwrite(str(out_path), diag)
-        print(f"Diagnostic image saved to {out_path}")
+        _, buf = cv2.imencode('.jpg', diag, [cv2.IMWRITE_JPEG_QUALITY, 85])
+        results['debug_image'] = base64.b64encode(buf).decode()
 
     return results, hand_width_source
 

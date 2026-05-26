@@ -27,7 +27,7 @@ async def measure(image: UploadFile = File(...)):
         f.write(await image.read())
         tmp_path = f.name
     try:
-        measurements, _ = run(tmp_path)
+        measurements, _ = run(tmp_path, debug=True)
         return measurements
     except RuntimeError as e:
         raise HTTPException(status_code=422, detail=str(e))
