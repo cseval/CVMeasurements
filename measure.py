@@ -3,9 +3,9 @@ import mediapipe.python.solutions.pose as mp_pose
 
 PoseLM = mp_pose.PoseLandmark
 
-# Nose sits roughly 13% of the nose-to-heel span below the crown.
+# Nose sits roughly 10% of the nose-to-heel span below the crown.
 # Empirically derived; adjust if you find systematic over/under-estimation.
-HEAD_OFFSET_RATIO = 0.13
+HEAD_OFFSET_RATIO = 0.10
 
 # MediaPipe Hands landmark index for the middle finger tip.
 # Middle finger is the longest and gives the most accurate wingspan endpoint.
@@ -42,14 +42,15 @@ def wingspan_tips(
 ) -> tuple[tuple[int, int], tuple[int, int]]:
     """
     Return (left_pt, right_pt) pixel coordinates for the wingspan endpoints.
-
-    When both hands are detected by the hands model, uses the middle finger
-    tip (landmark 12) from each hand -- the longest finger and the correct
-    landmark for fingertip-to-fingertip wingspan.  Falls back to the pose
-    index fingertip landmarks when fewer than two hands are available.
-
-    left_pt / right_pt refer to image-left and image-right respectively.
+    Always uses middle finger tip (landmark 12) from the hands model when
+    available. If only one hand is detected, uses that hand's middle finger
+    tip for one side and the pose index tip for the other.
+    Falls back to pose index tips when no hands are detected.
     """
+    def pose_index(side):
+        lm = pose_lms[PoseLM.LEFT_INDEX if side == 'left' else PoseLM.RIGHT_INDEX]
+        return (int(lm.x * frame_w), int(lm.y * frame_h))
+
     if all_hands_lms and len(all_hands_lms) >= 2:
         tips = []
         for hlm in all_hands_lms:
@@ -58,12 +59,20 @@ def wingspan_tips(
         tips.sort(key=lambda p: p[0])
         return tips[0], tips[-1]
 
-    # Fallback: pose index fingertips (sorted so left/right are image-consistent).
-    li = pose_lms[PoseLM.LEFT_INDEX]
-    ri = pose_lms[PoseLM.RIGHT_INDEX]
-    pt_a = (int(li.x * frame_w), int(li.y * frame_h))
-    pt_b = (int(ri.x * frame_w), int(ri.y * frame_h))
-    return (pt_a, pt_b) if pt_a[0] < pt_b[0] else (pt_b, pt_a)
+    if all_hands_lms and len(all_hands_lms) == 1:
+        tip = all_hands_lms[0].landmark[MIDDLE_TIP]
+        hand_pt = (int(tip.x * frame_w), int(tip.y * frame_h))
+        # Determine which side the detected hand is on by its x position
+        mid = frame_w / 2
+        if hand_pt[0] < mid:
+            return hand_pt, pose_index('right')
+        else:
+            return pose_index('left'), hand_pt
+
+    # Fallback: pose index fingertips
+    pt_l = pose_index('left')
+    pt_r = pose_index('right')
+    return (pt_l, pt_r) if pt_l[0] < pt_r[0] else (pt_r, pt_l)
 
 
 def measure_wingspan(

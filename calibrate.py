@@ -3,7 +3,7 @@ import numpy as np
 
 ARUCO_DICT = cv2.aruco.DICT_5X5_50
 MARKER_ID  = 0
-MARKER_CM  = 20.0  # printed size of the black square in marker/marker_20cm.png
+MARKER_CM  = 18.0  # printed size of the black square in cm
 
 SKEW_WARN_THRESHOLD = 0.05  # warn if diagonals differ by more than 5%
 

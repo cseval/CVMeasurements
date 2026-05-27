@@ -11,7 +11,7 @@ import cv2
 import numpy as np
 import mediapipe.python.solutions.pose as mp_pose
 
-from measure import wingspan_tips
+from measure import wingspan_tips, HEAD_OFFSET_RATIO
 
 PoseLM = mp_pose.PoseLandmark
 
@@ -74,7 +74,7 @@ def _draw_height(img: np.ndarray, pose_lms, w: int, h: int,
 
     heel_y  = max(left_heel.y, right_heel.y)
     span    = heel_y - nose.y
-    crown_y = nose.y - span * 0.13  # HEAD_OFFSET_RATIO matches measure.py
+    crown_y = nose.y - span * HEAD_OFFSET_RATIO
 
     crown_px = (int(nose.x * w), int(crown_y * h))
     heel_px  = (int(nose.x * w), int(heel_y * h))
