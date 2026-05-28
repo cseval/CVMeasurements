@@ -40,6 +40,6 @@ export default function App() {
   return screen === 'camera' ? (
     <Camera onCapture={handleCapture} disabled={processing} />
   ) : (
-    <Results results={results} error={error} onRetry={handleRetry} />
+    <Results results={results} error={error} warnings={results?.warnings} onRetry={handleRetry} />
   )
 }

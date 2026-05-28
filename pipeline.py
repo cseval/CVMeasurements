@@ -129,6 +129,7 @@ def run(image_path: str, debug: bool = False) -> tuple[dict, str | None]:
         )
 
     results           = {"px_per_cm": round(px_per_cm, 2)}
+    warnings          = []
     hand_width_source = None
     pose_lms          = None
     hand_lms          = None
@@ -142,7 +143,7 @@ def run(image_path: str, debug: bool = False) -> tuple[dict, str | None]:
     ) as pose:
         out = pose.process(rgb)
         if out.pose_landmarks is None:
-            print("WARNING: No pose detected -- check that your full body is in frame.")
+            warnings.append("No pose detected — check that your full body is in frame.")
         else:
             pose_lms = out.pose_landmarks.landmark
             results["height_cm"]   = round(measure_height(pose_lms, h, px_per_cm), 1)
@@ -179,8 +180,9 @@ def run(image_path: str, debug: bool = False) -> tuple[dict, str | None]:
                 results["hand_width_cm"] = width_cm
                 hand_width_source = source
             else:
-                print("WARNING: Could not detect hand landmarks. "
-                      "Try better lighting or move hands closer to camera.")
+                warnings.append(
+                    "Hand span could not be detected — try better lighting or move hands closer."
+                )
 
     if debug:
         import base64
@@ -188,6 +190,9 @@ def run(image_path: str, debug: bool = False) -> tuple[dict, str | None]:
                                 all_hands_lms, results)
         _, buf = cv2.imencode('.jpg', diag, [cv2.IMWRITE_JPEG_QUALITY, 85])
         results['debug_image'] = base64.b64encode(buf).decode()
+
+    if warnings:
+        results['warnings'] = warnings
 
     return results, hand_width_source
 
@@ -203,14 +208,23 @@ def main():
 
     measurements, hand_source = run(args.image, debug=args.debug)
 
+    if args.debug and 'debug_image' in measurements:
+        import base64
+        img_bytes = base64.b64decode(measurements.pop('debug_image'))
+        out_path = Path(args.image).with_stem(Path(args.image).stem + "_debug").with_suffix(".jpg")
+        out_path.write_bytes(img_bytes)
+        print(f"Diagnostic image saved to {out_path}")
+
     print("\nResults:")
     for key, val in measurements.items():
-        if key == "px_per_cm":
+        if key in ("px_per_cm", "warnings"):
             continue
         print(f"  {key}: {val} cm")
     print(f"\n  Scale: {measurements['px_per_cm']} px/cm")
     if hand_source:
-        print(f"  Hand width method: {hand_source}")
+        print(f"  Hand span method: {hand_source}")
+    for w in measurements.get('warnings', []):
+        print(f"  WARNING: {w}")
 
 
 if __name__ == "__main__":

@@ -6,7 +6,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "postinstall": "sed -i '' '/^\\/\\/#\\s*sourceMappingURL=/d' node_modules/@mediapipe/tasks-vision/vision_bundle.mjs 2>/dev/null || true"
+    "postinstall": ""
   },
   "dependencies": {
     "react": "^18.3.1",
