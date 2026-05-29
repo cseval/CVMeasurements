@@ -12,6 +12,7 @@ import numpy as np
 import mediapipe.python.solutions.pose as mp_pose
 
 from measure import wingspan_tips, HEAD_OFFSET_RATIO
+from calibrate import MARKER_CM
 
 PoseLM = mp_pose.PoseLandmark
 
@@ -61,7 +62,7 @@ def _draw_marker(img: np.ndarray, corners: np.ndarray) -> None:
                    COLOR_MARKER, -1)
     # Label near the top-left corner.
     tl = corners[0]
-    _label(img, "ArUco marker (20 cm)", (int(tl[0]), int(tl[1]) - 16),
+    _label(img, f"ArUco marker ({int(MARKER_CM)} cm)", (int(tl[0]), int(tl[1]) - 16),
            COLOR_MARKER)
 
 
