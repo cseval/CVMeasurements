@@ -53,16 +53,15 @@ def detect_marker(frame: np.ndarray) -> tuple[float, np.ndarray] | tuple[None, N
 
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.01)
     scales = []
-    first_refined = None
+    all_refined = []
 
     for idx in target_indices:
         refined = cv2.cornerSubPix(gray, corners[idx], (5, 5), (-1, -1), criteria)[0]
         scales.append(_scale_from_corners(refined))
-        if first_refined is None:
-            first_refined = refined
+        all_refined.append(refined)
 
     px_per_cm = float(np.mean(scales))
-    return px_per_cm, first_refined
+    return px_per_cm, all_refined
 
 
 def get_pixels_per_cm(frame: np.ndarray) -> float | None:

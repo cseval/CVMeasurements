@@ -51,8 +51,8 @@ def _load_image(path: str) -> np.ndarray:
 def _crop_hand(frame: np.ndarray, pose_lms, side: str = "right"):
     """
     Crop and upsample the hand region using pose landmarks.
-    Returns (crop_rgb, scale_factor) where scale_factor converts crop pixels
-    back to original-image pixels (crop_px / scale_factor = original_px).
+    Returns (crop_rgb, scale_factor, (x0, y0, x1, y1)) where the bounds
+    allow converting crop landmark coords back to full-image pixels.
     """
     h, w = frame.shape[:2]
 
@@ -74,7 +74,7 @@ def _crop_hand(frame: np.ndarray, pose_lms, side: str = "right"):
 
     crop = frame[y0:y1, x0:x1]
     if crop.size == 0:
-        return None, None
+        return None, None, None
 
     crop_w = x1 - x0
     target = max(MIN_HAND_CROP_PX, crop_w)
@@ -82,21 +82,29 @@ def _crop_hand(frame: np.ndarray, pose_lms, side: str = "right"):
     resized = cv2.resize(crop, (0, 0), fx=scale, fy=scale,
                          interpolation=cv2.INTER_CUBIC)
     rgb = cv2.cvtColor(resized, cv2.COLOR_BGR2RGB)
-    return rgb, scale
+    return rgb, scale, (x0, y0, x1, y1)
 
 
 def _hand_width_from_crop(frame: np.ndarray, pose_lms,
                            px_per_cm: float) -> tuple:
     """
-    Try MediaPipe Hands on a cropped+upsampled hand region.
-    Returns (width_cm, source_label) or (None, None) on failure.
+    Try MediaPipe Hands on cropped+upsampled hand regions for both hands.
+    Returns (width_cm, source_label, crop_tips) where crop_tips maps
+    'left'/'right' to the middle fingertip (x, y) in full-image pixels.
     """
+    from measure import MIDDLE_TIP
+    crop_tips = {}
+    width_cm  = None
+    source    = None
+
     for side in ("right", "left"):
-        crop_rgb, scale = _crop_hand(frame, pose_lms, side)
+        crop_rgb, scale, bounds = _crop_hand(frame, pose_lms, side)
         if crop_rgb is None:
             continue
 
         crop_h, crop_w = crop_rgb.shape[:2]
+        x0, y0, x1, y1 = bounds
+
         with mp_hands.Hands(
             static_image_mode=True,
             max_num_hands=1,
@@ -104,14 +112,23 @@ def _hand_width_from_crop(frame: np.ndarray, pose_lms,
         ) as hands:
             out = hands.process(crop_rgb)
             if out.multi_hand_landmarks:
-                width_cm = measure_hand_width(
-                    out.multi_hand_landmarks[0],
-                    crop_w, crop_h,
-                    px_per_cm * scale   # scale px/cm up to match the upsampled crop
-                )
-                return round(width_cm, 1), f"MediaPipe Hands (cropped {side} hand)"
+                lms = out.multi_hand_landmarks[0]
 
-    return None, None
+                # Convert middle fingertip back to full-image coordinates.
+                tip = lms.landmark[MIDDLE_TIP]
+                crop_tips[side] = (
+                    int(x0 + tip.x * (x1 - x0)),
+                    int(y0 + tip.y * (y1 - y0)),
+                )
+
+                if width_cm is None:
+                    width_cm = measure_hand_width(
+                        lms, crop_w, crop_h,
+                        px_per_cm * scale,
+                    )
+                    source = f"MediaPipe Hands (cropped {side} hand)"
+
+    return (round(width_cm, 1) if width_cm else None), source, crop_tips
 
 
 def run(image_path: str, debug: bool = False) -> tuple[dict, str | None]:
@@ -175,7 +192,7 @@ def run(image_path: str, debug: bool = False) -> tuple[dict, str | None]:
 
         # Fall back to cropped detection if full-image failed
         if "hand_width_cm" not in results:
-            width_cm, source = _hand_width_from_crop(frame, pose_lms, px_per_cm)
+            width_cm, source, crop_tips = _hand_width_from_crop(frame, pose_lms, px_per_cm)
             if width_cm is not None:
                 results["hand_width_cm"] = width_cm
                 hand_width_source = source
@@ -183,6 +200,19 @@ def run(image_path: str, debug: bool = False) -> tuple[dict, str | None]:
                 warnings.append(
                     "Hand span could not be detected — try better lighting or move hands closer."
                 )
+        else:
+            # Full-image detection found hand(s) but may have missed one.
+            # Run crop detection anyway to collect fingertips for wingspan.
+            _, _, crop_tips = _hand_width_from_crop(frame, pose_lms, px_per_cm)
+
+        # If full-image detection didn't find both hands, use crop fingertips
+        # for wingspan instead of the less-accurate pose index fallback.
+        if (all_hands_lms is None or len(all_hands_lms) < 2) and len(crop_tips) == 2:
+            tips = sorted(crop_tips.values(), key=lambda p: p[0])
+            left_pt, right_pt = tips[0], tips[1]
+            dx = right_pt[0] - left_pt[0]
+            dy = right_pt[1] - left_pt[1]
+            results["wingspan_cm"] = round(np.hypot(dx, dy) / px_per_cm, 1)
 
     if debug:
         import base64

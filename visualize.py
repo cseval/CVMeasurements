@@ -150,7 +150,7 @@ def _draw_scale_bar(img: np.ndarray, px_per_cm: float) -> None:
 
 def draw_diagnostics(
     frame: np.ndarray,
-    marker_corners: np.ndarray | None,
+    marker_corners: list | None,
     pose_lms,
     hand_lms,
     all_hands_lms,
@@ -162,8 +162,8 @@ def draw_diagnostics(
     Parameters
     ----------
     frame          : BGR image as returned by cv2 / _load_image
-    marker_corners : refined (4, 2) float32 corners from detect_marker,
-                     or None if the marker was not found
+    marker_corners : list of refined (4, 2) float32 corner arrays from
+                     detect_marker, or None if no marker was found
     pose_lms       : pose_landmarks.landmark list from MediaPipe, or None
     hand_lms       : single hand landmark object used for hand width, or None
     all_hands_lms  : list of all detected hand landmark objects, or None
@@ -174,8 +174,9 @@ def draw_diagnostics(
     h, w = img.shape[:2]
     px_per_cm = results.get("px_per_cm", 1.0)
 
-    if marker_corners is not None:
-        _draw_marker(img, marker_corners)
+    if marker_corners:
+        for corners in marker_corners:
+            _draw_marker(img, corners)
 
     if pose_lms is not None:
         if "height_cm" in results:
