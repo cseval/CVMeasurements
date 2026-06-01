@@ -1,11 +1,12 @@
 import { useState, useCallback } from 'react'
 import Camera from './components/Camera.jsx'
 import Results from './components/Results.jsx'
+import Instructions from './components/Instructions.jsx'
 import './App.css'
 
 export default function App() {
   const [processing, setProcessing] = useState(false)
-  const [screen,     setScreen]     = useState('camera')
+  const [screen,     setScreen]     = useState('instructions')
   const [results,    setResults]    = useState(null)
   const [error,      setError]      = useState(null)
 
@@ -37,9 +38,11 @@ export default function App() {
     setScreen('camera')
   }, [])
 
-  return screen === 'camera' ? (
-    <Camera onCapture={handleCapture} disabled={processing} />
-  ) : (
-    <Results results={results} error={error} warnings={results?.warnings} onRetry={handleRetry} />
-  )
+  if (screen === 'instructions') {
+    return <Instructions onStart={() => setScreen('camera')} />
+  }
+  if (screen === 'camera') {
+    return <Camera onCapture={handleCapture} disabled={processing} />
+  }
+  return <Results results={results} error={error} warnings={results?.warnings} onRetry={handleRetry} />
 }
