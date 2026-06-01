@@ -4,6 +4,8 @@ export default function Camera({ onCapture, disabled }) {
   const videoRef = useRef(null);
   const [streamReady, setStreamReady] = useState(false);
   const [cameraError, setCameraError] = useState(null);
+  const [countdown, setCountdown] = useState(null);
+  const [useCountdown, setUseCountdown] = useState(true);
 
   useEffect(() => {
     let stream;
@@ -22,7 +24,7 @@ export default function Camera({ onCapture, disabled }) {
     return () => stream?.getTracks().forEach((t) => t.stop());
   }, []);
 
-  const handleCapture = useCallback(() => {
+  const shoot = useCallback(() => {
     const video = videoRef.current;
     if (!video) return;
     const canvas = document.createElement('canvas');
@@ -31,6 +33,25 @@ export default function Camera({ onCapture, disabled }) {
     canvas.getContext('2d').drawImage(video, 0, 0);
     canvas.toBlob((blob) => onCapture(blob), 'image/jpeg', 0.92);
   }, [onCapture]);
+
+  const handleCapture = useCallback(() => {
+    if (!useCountdown) {
+      shoot();
+      return;
+    }
+    let count = 5;
+    setCountdown(count);
+    const interval = setInterval(() => {
+      count -= 1;
+      if (count > 0) {
+        setCountdown(count);
+      } else {
+        clearInterval(interval);
+        setCountdown(null);
+        shoot();
+      }
+    }, 1000);
+  }, [useCountdown, shoot]);
 
   if (cameraError) {
     return (
@@ -42,19 +63,38 @@ export default function Camera({ onCapture, disabled }) {
     );
   }
 
+  const isCounting = countdown !== null;
+
   return (
     <div className="camera-screen">
       <div className="camera-wrapper">
         <video ref={videoRef} className="camera-video" autoPlay playsInline muted />
 
+        {isCounting && (
+          <div className="countdown-overlay">
+            <span className="countdown-number">{countdown}</span>
+          </div>
+        )}
+
         <div className="capture-bar">
+          <button
+            className="timer-toggle"
+            onClick={() => setUseCountdown((v) => !v)}
+            disabled={disabled || isCounting}
+          >
+            {useCountdown ? '5s' : 'instant'}
+          </button>
+
           <button
             className="capture-btn"
             onClick={handleCapture}
-            disabled={disabled || !streamReady}
+            disabled={disabled || !streamReady || isCounting}
           >
             {disabled ? '…' : 'CAP'}
           </button>
+
+          {/* spacer to keep CAP centered */}
+          <div style={{ width: 52 }} />
         </div>
 
         {disabled && (
