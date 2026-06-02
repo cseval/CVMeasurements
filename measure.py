@@ -47,9 +47,15 @@ def wingspan_tips(
     tip for one side and the pose index tip for the other.
     Falls back to pose index tips when no hands are detected.
     """
-    def pose_index(side):
-        lm = pose_lms[PoseLM.LEFT_INDEX if side == 'left' else PoseLM.RIGHT_INDEX]
-        return (int(lm.x * frame_w), int(lm.y * frame_h))
+    def pose_wrist_to_index(side):
+        wrist = pose_lms[PoseLM.LEFT_WRIST  if side == 'left' else PoseLM.RIGHT_WRIST]
+        index = pose_lms[PoseLM.LEFT_INDEX  if side == 'left' else PoseLM.RIGHT_INDEX]
+        wx, wy = wrist.x * frame_w, wrist.y * frame_h
+        ix, iy = index.x * frame_w, index.y * frame_h
+        dx, dy = ix - wx, iy - wy
+        # Project 8% of the wrist→index length past the index tip to
+        # approximate the middle fingertip when the hands model is unavailable.
+        return (int(ix + dx * 0.08), int(iy + dy * 0.08))
 
     if all_hands_lms and len(all_hands_lms) >= 2:
         tips = []
@@ -62,16 +68,15 @@ def wingspan_tips(
     if all_hands_lms and len(all_hands_lms) == 1:
         tip = all_hands_lms[0].landmark[MIDDLE_TIP]
         hand_pt = (int(tip.x * frame_w), int(tip.y * frame_h))
-        # Determine which side the detected hand is on by its x position
         mid = frame_w / 2
         if hand_pt[0] < mid:
-            return hand_pt, pose_index('right')
+            return hand_pt, pose_wrist_to_index('right')
         else:
-            return pose_index('left'), hand_pt
+            return pose_wrist_to_index('left'), hand_pt
 
-    # Fallback: pose index fingertips
-    pt_l = pose_index('left')
-    pt_r = pose_index('right')
+    # Fallback: wrist-to-index vector for both sides
+    pt_l = pose_wrist_to_index('left')
+    pt_r = pose_wrist_to_index('right')
     return (pt_l, pt_r) if pt_l[0] < pt_r[0] else (pt_r, pt_l)
 
 

@@ -11,7 +11,7 @@ import cv2
 import numpy as np
 import mediapipe.python.solutions.pose as mp_pose
 
-from measure import wingspan_tips, HEAD_OFFSET_RATIO
+from measure import HEAD_OFFSET_RATIO
 from calibrate import MARKER_CM
 
 PoseLM = mp_pose.PoseLandmark
@@ -94,16 +94,9 @@ def _draw_height(img: np.ndarray, pose_lms, w: int, h: int,
            COLOR_HEIGHT)
 
 
-def _draw_wingspan(img: np.ndarray, pose_lms, w: int, h: int,
-                   px_per_cm: float, wingspan_cm: float,
-                   all_hands_lms=None) -> None:
-    """
-    Draw the fingertip-to-fingertip wingspan line.
-    Uses hands model middle fingertips when both hands are detected,
-    otherwise falls back to pose index fingertip landmarks.
-    """
-    left_pt, right_pt = wingspan_tips(pose_lms, w, h, all_hands_lms)
-
+def _draw_wingspan(img: np.ndarray, wingspan_cm: float,
+                   left_pt: tuple, right_pt: tuple) -> None:
+    """Draw the fingertip-to-fingertip wingspan line using precomputed endpoints."""
     cv2.line(img, left_pt, right_pt, COLOR_WINGSPAN, LINE_THICKNESS)
     cv2.circle(img, left_pt,  DOT_RADIUS, COLOR_LANDMARK, -1)
     cv2.circle(img, right_pt, DOT_RADIUS, COLOR_LANDMARK, -1)
@@ -155,6 +148,7 @@ def draw_diagnostics(
     hand_lms,
     all_hands_lms,
     results: dict,
+    wingspan_pts: tuple | None = None,
 ) -> np.ndarray:
     """
     Return a copy of frame with measurement overlays drawn.
@@ -169,6 +163,8 @@ def draw_diagnostics(
     all_hands_lms  : list of all detected hand landmark objects, or None
     results        : dict with keys px_per_cm, height_cm, wingspan_cm,
                      hand_width_cm (subset is fine)
+    wingspan_pts   : (left_pt, right_pt) pixel coords actually used for the
+                     wingspan calculation, so the line matches the number
     """
     img = frame.copy()
     h, w = img.shape[:2]
@@ -181,9 +177,8 @@ def draw_diagnostics(
     if pose_lms is not None:
         if "height_cm" in results:
             _draw_height(img, pose_lms, w, h, px_per_cm, results["height_cm"])
-        if "wingspan_cm" in results:
-            _draw_wingspan(img, pose_lms, w, h, px_per_cm,
-                           results["wingspan_cm"], all_hands_lms)
+        if "wingspan_cm" in results and wingspan_pts is not None:
+            _draw_wingspan(img, results["wingspan_cm"], *wingspan_pts)
 
     if hand_lms is not None and "hand_width_cm" in results:
         _draw_hand_width(img, hand_lms, w, h, results["hand_width_cm"])

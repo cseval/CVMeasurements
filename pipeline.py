@@ -151,6 +151,7 @@ def run(image_path: str, debug: bool = False) -> tuple[dict, str | None]:
     pose_lms          = None
     hand_lms          = None
     all_hands_lms     = None
+    wingspan_pts      = None
 
     # Pose: height + wingspan (wingspan may be upgraded below if hands found)
     with mp_pose.Pose(
@@ -165,6 +166,7 @@ def run(image_path: str, debug: bool = False) -> tuple[dict, str | None]:
             pose_lms = out.pose_landmarks.landmark
             results["height_cm"]   = round(measure_height(pose_lms, h, px_per_cm), 1)
             results["wingspan_cm"] = round(measure_wingspan(pose_lms, w, h, px_per_cm), 1)
+            wingspan_pts = wingspan_tips(pose_lms, w, h, None)
 
     # Hands: crop-based detection, no pose fallback
     if pose_lms is not None:
@@ -189,6 +191,7 @@ def run(image_path: str, debug: bool = False) -> tuple[dict, str | None]:
                     results["wingspan_cm"] = round(
                         measure_wingspan(pose_lms, w, h, px_per_cm, all_hands_lms), 1
                     )
+                    wingspan_pts = wingspan_tips(pose_lms, w, h, all_hands_lms)
 
         # Fall back to cropped detection if full-image failed
         if "hand_width_cm" not in results:
@@ -213,11 +216,12 @@ def run(image_path: str, debug: bool = False) -> tuple[dict, str | None]:
             dx = right_pt[0] - left_pt[0]
             dy = right_pt[1] - left_pt[1]
             results["wingspan_cm"] = round(np.hypot(dx, dy) / px_per_cm, 1)
+            wingspan_pts = (left_pt, right_pt)
 
     if debug:
         import base64
         diag = draw_diagnostics(frame, marker_corners, pose_lms, hand_lms,
-                                all_hands_lms, results)
+                                all_hands_lms, results, wingspan_pts)
         _, buf = cv2.imencode('.jpg', diag, [cv2.IMWRITE_JPEG_QUALITY, 85])
         results['debug_image'] = base64.b64encode(buf).decode()
 
