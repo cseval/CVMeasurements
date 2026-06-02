@@ -34,6 +34,20 @@ def measure_height(pose_lms, frame_h: int, px_per_cm: float) -> float:
     return ((heel_y - crown_y) * frame_h) / px_per_cm
 
 
+def height_endpoints(pose_lms, frame_w: int, frame_h: int) -> tuple:
+    """Return (crown_pt, heel_pt) pixel coordinates matching measure_height."""
+    nose       = pose_lms[PoseLM.NOSE]
+    left_heel  = pose_lms[PoseLM.LEFT_HEEL]
+    right_heel = pose_lms[PoseLM.RIGHT_HEEL]
+    heel_y  = max(left_heel.y, right_heel.y)
+    span    = heel_y - nose.y
+    crown_y = nose.y - span * HEAD_OFFSET_RATIO
+    return (
+        (int(nose.x * frame_w), int(crown_y * frame_h)),
+        (int(nose.x * frame_w), int(heel_y  * frame_h)),
+    )
+
+
 def wingspan_tips(
     pose_lms,
     frame_w: int,

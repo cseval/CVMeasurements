@@ -300,6 +300,7 @@ body {
   display: flex;
   align-items: center;
   gap: 12px;
+  justify-content: space-between;
 }
 
 .results-header h1 {
@@ -352,6 +353,9 @@ body {
 
 .results-footer {
   padding: 0 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .retry-btn {
@@ -369,6 +373,53 @@ body {
 
 .retry-btn:active {
   opacity: 0.8;
+}
+
+.adjust-btn {
+  width: 100%;
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.adjust-btn:active {
+  opacity: 0.7;
+}
+
+.done-btn {
+  padding: 8px 18px;
+  border-radius: 10px;
+  border: none;
+  background: var(--color-blue);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-left: auto;
+}
+
+.adjust-hint {
+  font-size: 12px;
+  color: var(--color-muted);
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.adjusted-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-yellow);
+  margin-left: 6px;
+  vertical-align: middle;
+  margin-bottom: 1px;
 }
 
 /* ── Instructions screen ── */

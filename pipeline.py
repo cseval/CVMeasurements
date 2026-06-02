@@ -23,7 +23,7 @@ import numpy as np
 from pathlib import Path
 
 from calibrate  import detect_marker
-from measure    import measure_height, measure_wingspan, measure_hand_width, wingspan_tips
+from measure    import measure_height, measure_wingspan, measure_hand_width, wingspan_tips, height_endpoints
 from visualize  import draw_diagnostics
 
 POSE_CONF        = 0.7
@@ -218,12 +218,36 @@ def run(image_path: str, debug: bool = False) -> tuple[dict, str | None]:
             results["wingspan_cm"] = round(np.hypot(dx, dy) / px_per_cm, 1)
             wingspan_pts = (left_pt, right_pt)
 
+    # Return endpoint coordinates so the frontend can render draggable handles.
+    if pose_lms is not None and 'height_cm' in results:
+        crown_pt, heel_pt = height_endpoints(pose_lms, w, h)
+        endpoints = {
+            'height': {'crown': list(crown_pt), 'heel': list(heel_pt)},
+        }
+        if wingspan_pts is not None:
+            endpoints['wingspan'] = {
+                'left':  list(wingspan_pts[0]),
+                'right': list(wingspan_pts[1]),
+            }
+        if hand_lms is not None and 'hand_width_cm' in results:
+            thumb = hand_lms.landmark[4]
+            pinky = hand_lms.landmark[20]
+            endpoints['hand'] = {
+                'thumb': [int(thumb.x * w), int(thumb.y * h)],
+                'pinky': [int(pinky.x * w), int(pinky.y * h)],
+            }
+        results['endpoints'] = endpoints
+        results['img_width']  = w
+        results['img_height'] = h
+
     if debug:
         import base64
         diag = draw_diagnostics(frame, marker_corners, pose_lms, hand_lms,
                                 all_hands_lms, results, wingspan_pts)
-        _, buf = cv2.imencode('.jpg', diag, [cv2.IMWRITE_JPEG_QUALITY, 85])
+        _, buf     = cv2.imencode('.jpg', diag,  [cv2.IMWRITE_JPEG_QUALITY, 85])
+        _, raw_buf = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
         results['debug_image'] = base64.b64encode(buf).decode()
+        results['raw_image']   = base64.b64encode(raw_buf).decode()
 
     if warnings:
         results['warnings'] = warnings
