@@ -7,17 +7,56 @@ try:
 except ImportError:
     pass
 
-from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi import FastAPI, File, UploadFile, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 from pipeline import run
+from db import search_athletes, get_athlete_status, upsert_measurement
 
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_methods=["POST", "OPTIONS"],
+    allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
 )
+
+
+@app.get("/api/athletes")
+async def athletes(q: str = Query(default="")):
+    try:
+        return search_athletes(q)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/athletes/{player_id}/status")
+async def athlete_status(player_id: int):
+    try:
+        return get_athlete_status(player_id)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class SaveRequest(BaseModel):
+    player_id:     int
+    first_name:    str
+    last_name:     str
+    height_cm:     float
+    wingspan_cm:   float
+    hand_width_cm: float
+
+
+@app.post("/api/save")
+async def save(req: SaveRequest):
+    try:
+        row_id, action = upsert_measurement(
+            req.player_id, req.first_name, req.last_name,
+            req.height_cm, req.wingspan_cm, req.hand_width_cm,
+        )
+        return {"id": row_id, "action": action}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/api/measure")

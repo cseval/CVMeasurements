@@ -513,6 +513,113 @@ body {
   color: var(--color-muted);
 }
 
+/* ── Athlete select screen ── */
+.athlete-screen {
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg);
+  padding: 0 0 max(24px, env(safe-area-inset-bottom));
+}
+
+.athlete-header {
+  padding: 28px 20px 0;
+}
+
+.athlete-header h1 {
+  font-size: 26px;
+  font-weight: 700;
+}
+
+.athlete-body {
+  flex: 1;
+  padding: 20px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+}
+
+.athlete-search {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 16px;
+  outline: none;
+}
+
+.athlete-search:focus {
+  border-color: var(--color-blue);
+}
+
+.athlete-hint {
+  font-size: 13px;
+  color: var(--color-muted);
+  text-align: center;
+  padding: 8px 0;
+}
+
+.athlete-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.athlete-row {
+  width: 100%;
+  padding: 16px;
+  border-radius: 14px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s;
+}
+
+.athlete-row:active {
+  border-color: var(--color-blue);
+}
+
+.athlete-name {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.athlete-id {
+  font-size: 12px;
+  color: var(--color-muted);
+}
+
+/* ── Save / athlete banner in results ── */
+.athlete-banner {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: 15px;
+  font-weight: 600;
+  text-align: center;
+  color: var(--color-text);
+}
+
+.save-success {
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  border-radius: 14px;
+  padding: 16px;
+  color: #4ade80;
+  font-size: 15px;
+  font-weight: 600;
+  text-align: center;
+}
+
 /* Error card */
 .error-card {
   background: rgba(239, 68, 68, 0.1);

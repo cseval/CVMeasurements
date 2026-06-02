@@ -2,13 +2,15 @@ import { useState, useCallback } from 'react'
 import Camera from './components/Camera.jsx'
 import Results from './components/Results.jsx'
 import Instructions from './components/Instructions.jsx'
+import AthleteSelect from './components/AthleteSelect.jsx'
 import './App.css'
 
 export default function App() {
+  const [screen,     setScreen]   = useState('instructions')
   const [processing, setProcessing] = useState(false)
-  const [screen,     setScreen]     = useState('instructions')
-  const [results,    setResults]    = useState(null)
-  const [error,      setError]      = useState(null)
+  const [results,    setResults]  = useState(null)
+  const [error,      setError]    = useState(null)
+  const [athlete,    setAthlete]  = useState(null)  // {id, first_name, last_name, existing}
 
   const handleCapture = useCallback(async (blob) => {
     setProcessing(true)
@@ -38,11 +40,27 @@ export default function App() {
     setScreen('camera')
   }, [])
 
+  const handleAthleteSelect = useCallback((selected) => {
+    setAthlete(selected)
+    setScreen('camera')
+  }, [])
+
   if (screen === 'instructions') {
-    return <Instructions onStart={() => setScreen('camera')} />
+    return <Instructions onStart={() => setScreen('athlete')} />
+  }
+  if (screen === 'athlete') {
+    return <AthleteSelect onSelect={handleAthleteSelect} />
   }
   if (screen === 'camera') {
     return <Camera onCapture={handleCapture} disabled={processing} />
   }
-  return <Results results={results} error={error} warnings={results?.warnings} onRetry={handleRetry} />
+  return (
+    <Results
+      results={results}
+      error={error}
+      warnings={results?.warnings}
+      athlete={athlete}
+      onRetry={handleRetry}
+    />
+  )
 }

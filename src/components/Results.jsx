@@ -53,10 +53,11 @@ function compositeAdjusted(debugImageB64, pts, baseScale, imgW, imgH) {
   })
 }
 
-export default function Results({ results, error, warnings, onRetry }) {
+export default function Results({ results, error, warnings, athlete, onRetry }) {
   const [adjusting, setAdjusting]     = useState(false)
   const [adjustedVals, setAdjusted]   = useState({})
   const [adjustedImage, setAdjImage]  = useState(null)
+  const [saveState, setSaveState]     = useState('idle') // idle | saving | saved | error
   const canvasRef                     = useRef(null)
 
   const canAdjust = !!(results?.endpoints && results?.raw_image)
@@ -79,6 +80,40 @@ export default function Results({ results, error, warnings, onRetry }) {
       )
       setAdjImage(dataUrl)
     }
+  }
+
+  async function handleSave() {
+    if (!athlete || !display.height_cm || !display.wingspan_cm || !display.hand_width_cm) return
+    setSaveState('saving')
+    try {
+      const res = await fetch('/api/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          player_id:     athlete.id,
+          first_name:    athlete.first_name,
+          last_name:     athlete.last_name,
+          height_cm:     display.height_cm,
+          wingspan_cm:   display.wingspan_cm,
+          hand_width_cm: display.hand_width_cm,
+        }),
+      })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        throw new Error(body.detail || `Server error ${res.status}`)
+      }
+      const data = await res.json()
+      setSaveState(data.action === 'updated' ? 'updated' : 'saved')
+    } catch (err) {
+      setSaveState('error')
+    }
+  }
+
+  function saveLabel() {
+    if (!athlete?.status) return 'Save Measurements'
+    if (!athlete.status.exists)   return 'Save Measurements'
+    if (!athlete.status.has_data) return 'Add Measurements'
+    return 'Update Measurements'
   }
 
   if (error) {
@@ -165,12 +200,46 @@ export default function Results({ results, error, warnings, onRetry }) {
       </div>
 
       <div className="results-footer">
+        {athlete && !adjusting && (
+          <div className="athlete-banner">
+            {athlete.first_name} {athlete.last_name}
+          </div>
+        )}
+
+        {athlete && !adjusting && saveState === 'idle' && (
+          <button
+            className="retry-btn"
+            onClick={handleSave}
+            disabled={!display.height_cm}
+          >
+            {saveLabel()}
+          </button>
+        )}
+
+        {saveState === 'saving' && (
+          <button className="retry-btn" disabled>Saving…</button>
+        )}
+
+        {(saveState === 'saved' || saveState === 'updated') && (
+          <div className="save-success">
+            {saveState === 'updated' ? 'Measurements updated' : 'Measurements saved'}
+          </div>
+        )}
+
+        {saveState === 'error' && (
+          <div className="error-card" style={{ fontSize: 13 }}>
+            Save failed — check connection and try again
+          </div>
+        )}
+
         {canAdjust && !adjusting && (
           <button className="adjust-btn" onClick={() => setAdjusting(true)}>
             Adjust Lines
           </button>
         )}
-        <button className="retry-btn" onClick={onRetry}>Measure Again</button>
+        <button className="retry-btn" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', color: 'var(--color-text)' }} onClick={onRetry}>
+          Measure Again
+        </button>
       </div>
     </div>
   )
