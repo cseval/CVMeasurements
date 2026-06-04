@@ -597,6 +597,38 @@ body {
   color: var(--color-muted);
 }
 
+.test-mode-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 20px 0 16px;
+  color: var(--color-muted);
+  font-size: 13px;
+}
+
+.test-mode-divider::before,
+.test-mode-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--color-border);
+}
+
+.test-mode-btn {
+  width: 100%;
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px dashed var(--color-border);
+  background: transparent;
+  color: var(--color-muted);
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.test-mode-btn:active {
+  background: var(--color-surface);
+}
+
 /* ── Save / athlete banner in results ── */
 .athlete-banner {
   background: var(--color-surface);

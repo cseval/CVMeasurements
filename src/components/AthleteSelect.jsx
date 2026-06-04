@@ -75,6 +75,13 @@ export default function AthleteSelect({ onSelect }) {
             </button>
           ))}
         </div>
+
+        <div className="test-mode-divider">
+          <span>or</span>
+        </div>
+        <button className="test-mode-btn" onClick={() => onSelect(null)}>
+          Test Mode
+        </button>
       </div>
     </div>
   )
