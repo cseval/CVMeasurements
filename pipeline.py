@@ -131,12 +131,12 @@ def _hand_width_from_crop(frame: np.ndarray, pose_lms,
     return (round(width_cm, 1) if width_cm else None), source, crop_tips
 
 
-def run(image_path: str, debug: bool = False) -> tuple[dict, str | None]:
+def run(image_path: str, debug: bool = False, marker_cm: float = 20.0) -> tuple[dict, str | None]:
     frame = _load_image(image_path)
     h, w  = frame.shape[:2]
     rgb   = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-    px_per_cm, marker_corners = detect_marker(frame)
+    px_per_cm, marker_corners = detect_marker(frame, marker_cm)
     if px_per_cm is None:
         raise RuntimeError(
             "ArUco marker not detected.\n"

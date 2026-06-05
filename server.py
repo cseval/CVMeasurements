@@ -7,7 +7,7 @@ try:
 except ImportError:
     pass
 
-from fastapi import FastAPI, File, UploadFile, HTTPException, Query
+from fastapi import FastAPI, File, Form, UploadFile, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from pipeline import run
@@ -60,13 +60,13 @@ async def save(req: SaveRequest):
 
 
 @app.post("/api/measure")
-async def measure(image: UploadFile = File(...)):
+async def measure(image: UploadFile = File(...), marker_cm: float = Form(20.0)):
     suffix = os.path.splitext(image.filename or ".jpg")[1] or ".jpg"
     with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as f:
         f.write(await image.read())
         tmp_path = f.name
     try:
-        measurements, _ = run(tmp_path, debug=True)
+        measurements, _ = run(tmp_path, debug=True, marker_cm=marker_cm)
         return measurements
     except RuntimeError as e:
         raise HTTPException(status_code=422, detail=str(e))

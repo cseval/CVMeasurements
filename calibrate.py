@@ -3,12 +3,12 @@ import numpy as np
 
 ARUCO_DICT = cv2.aruco.DICT_5X5_50
 MARKER_ID  = 0
-MARKER_CM  = 20.0  # printed size of the black square in cm
+MARKER_CM  = 20.0  # default printed size of the black square in cm
 
 SKEW_WARN_THRESHOLD = 0.05  # warn if diagonals differ by more than 5%
 
 
-def _scale_from_corners(refined: np.ndarray) -> float:
+def _scale_from_corners(refined: np.ndarray, marker_cm: float) -> float:
     """Compute px_per_cm from one refined (4, 2) marker corner array."""
     d1 = float(np.linalg.norm(refined[2] - refined[0]))
     d2 = float(np.linalg.norm(refined[3] - refined[1]))
@@ -21,14 +21,14 @@ def _scale_from_corners(refined: np.ndarray) -> float:
     side_px = float(np.mean([
         np.linalg.norm(refined[(i + 1) % 4] - refined[i]) for i in range(4)
     ]))
-    diag_expected_cm = MARKER_CM * np.sqrt(2)
+    diag_expected_cm = marker_cm * np.sqrt(2)
     return float(np.mean([
-        side_px / MARKER_CM,
+        side_px / marker_cm,
         np.mean([d1, d2]) / diag_expected_cm,
     ]))
 
 
-def detect_marker(frame: np.ndarray) -> tuple[float, np.ndarray] | tuple[None, None]:
+def detect_marker(frame: np.ndarray, marker_cm: float = MARKER_CM) -> tuple[float, np.ndarray] | tuple[None, None]:
     """
     Detect all ArUco markers with MARKER_ID in frame.
 
@@ -57,14 +57,14 @@ def detect_marker(frame: np.ndarray) -> tuple[float, np.ndarray] | tuple[None, N
 
     for idx in target_indices:
         refined = cv2.cornerSubPix(gray, corners[idx], (5, 5), (-1, -1), criteria)[0]
-        scales.append(_scale_from_corners(refined))
+        scales.append(_scale_from_corners(refined, marker_cm))
         all_refined.append(refined)
 
     px_per_cm = float(np.mean(scales))
     return px_per_cm, all_refined
 
 
-def get_pixels_per_cm(frame: np.ndarray) -> float | None:
+def get_pixels_per_cm(frame: np.ndarray, marker_cm: float = MARKER_CM) -> float | None:
     """Convenience wrapper around detect_marker that returns only the scale."""
-    px_per_cm, _ = detect_marker(frame)
+    px_per_cm, _ = detect_marker(frame, marker_cm)
     return px_per_cm

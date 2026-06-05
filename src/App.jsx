@@ -11,6 +11,7 @@ export default function App() {
   const [results,    setResults]  = useState(null)
   const [error,      setError]    = useState(null)
   const [athlete,    setAthlete]  = useState(null)  // {id, first_name, last_name, existing}
+  const [markerSize, setMarkerSize] = useState(20)
 
   const handleCapture = useCallback(async (blob) => {
     setProcessing(true)
@@ -18,6 +19,7 @@ export default function App() {
     try {
       const formData = new FormData()
       formData.append('image', blob, 'capture.jpg')
+      formData.append('marker_cm', markerSize)
       const res = await fetch('/api/measure', { method: 'POST', body: formData })
       if (!res.ok) {
         const body = await res.json().catch(() => ({}))
@@ -40,8 +42,9 @@ export default function App() {
     setScreen('camera')
   }, [])
 
-  const handleAthleteSelect = useCallback((selected) => {
+  const handleAthleteSelect = useCallback((selected, size) => {
     setAthlete(selected)
+    setMarkerSize(size)
     setScreen('camera')
   }, [])
 
