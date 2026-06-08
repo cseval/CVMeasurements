@@ -1,30 +1,36 @@
 """
-Generates marker/marker_10cm.png — an ArUco marker with a border and
-a label showing the required print size.
+Generates an ArUco marker PNG + PDF at the requested physical size.
 
-Print the output at exactly 10 cm × 10 cm (exclude the white border when measuring).
+The PDF is the reliable format for printing — it encodes the exact page
+dimensions so the printer renders at the correct physical size regardless
+of what print application is used.  Open the PDF and print at 100% / actual
+size with no scaling.
+
+Usage:
+    python generate_marker.py             # generates all three sizes (12, 16, 20 cm)
+    python generate_marker.py --cm 20     # generates only the 20 cm marker
 """
 
+import argparse
 import cv2
 import numpy as np
 from pathlib import Path
 from PIL import Image
 
-MARKER_ID    = 0
-DICT_TYPE    = cv2.aruco.DICT_5X5_50
-OUTPUT_PATH  = Path("marker/marker_20cm.png")
+MARKER_ID   = 0
+DICT_TYPE   = cv2.aruco.DICT_5X5_50
+PRINT_DPI   = 300
+BORDER_CM   = 1.0
+LABEL_CM    = 0.3
+ALL_SIZES   = [12, 16, 20]
 
-PRINT_DPI    = 300
-MARKER_CM    = 20.0
-BORDER_CM    = 1.0
-LABEL_CM     = 0.3
 
 def cm_to_px(cm: float) -> int:
     return round(cm / 2.54 * PRINT_DPI)
 
 
-def main():
-    marker_px = cm_to_px(MARKER_CM)
+def generate(marker_cm: float):
+    marker_px = cm_to_px(marker_cm)
     border_px = cm_to_px(BORDER_CM)
     label_px  = cm_to_px(LABEL_CM)
 
@@ -39,21 +45,40 @@ def main():
         value=255,
     )
 
-    label = f"Print at 100% scale -- black square must be exactly {int(MARKER_CM)} cm x {int(MARKER_CM)} cm"
+    label = f"Print at 100% / actual size -- black square must be exactly {int(marker_cm)} cm x {int(marker_cm)} cm"
     cv2.putText(
         bordered, label,
         (border_px, marker_px + border_px + label_px - 4),
         cv2.FONT_HERSHEY_SIMPLEX, 0.55, 0, 1, cv2.LINE_AA,
     )
 
-    OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
+    out_dir = Path("marker")
+    out_dir.mkdir(parents=True, exist_ok=True)
 
-    # Save with explicit DPI so printer renders at correct physical size
     pil_img = Image.fromarray(bordered)
-    pil_img.save(str(OUTPUT_PATH), dpi=(PRINT_DPI, PRINT_DPI))
 
-    print(f"Marker saved to {OUTPUT_PATH}  ({pil_img.width}×{pil_img.height} px @ {PRINT_DPI} DPI)")
-    print(f"Print at 100% / actual size — black square will be exactly {MARKER_CM} cm × {MARKER_CM} cm.")
+    png_path = out_dir / f"marker_{int(marker_cm)}cm.png"
+    pil_img.save(str(png_path), dpi=(PRINT_DPI, PRINT_DPI))
+
+    # PDF encodes physical page size directly — more reliable for printing
+    # at correct dimensions than a PNG with embedded DPI metadata.
+    pdf_path = out_dir / f"marker_{int(marker_cm)}cm.pdf"
+    pil_img.save(str(pdf_path), resolution=PRINT_DPI)
+
+    print(f"  {int(marker_cm)} cm — saved {png_path}  and  {pdf_path}")
+    print(f"           Print the PDF at 100% / actual size. Black square = {marker_cm} cm × {marker_cm} cm.")
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Generate ArUco marker PNG + PDF")
+    parser.add_argument("--cm", type=float, default=None,
+                        help=f"Marker size in cm (default: generate all sizes {ALL_SIZES})")
+    args = parser.parse_args()
+
+    sizes = [args.cm] if args.cm else ALL_SIZES
+    print(f"Generating {len(sizes)} marker(s)…")
+    for s in sizes:
+        generate(s)
 
 
 if __name__ == "__main__":

@@ -243,7 +243,7 @@ def run(image_path: str, debug: bool = False, marker_cm: float = 20.0) -> tuple[
     if debug:
         import base64
         diag = draw_diagnostics(frame, marker_corners, pose_lms, hand_lms,
-                                all_hands_lms, results, wingspan_pts)
+                                all_hands_lms, results, wingspan_pts, marker_cm)
         _, buf     = cv2.imencode('.jpg', diag,  [cv2.IMWRITE_JPEG_QUALITY, 85])
         _, raw_buf = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
         results['debug_image'] = base64.b64encode(buf).decode()

@@ -1,7 +1,7 @@
 const STEPS = [
   {
     title: 'Print the marker',
-    body: 'Print marker_20cm.png at 100% size so the black square is 20 cm × 20 cm. Tape it flat on the wall at wrist height.',
+    body: 'Print a 12x12, 16x16, or 20x20 marker',
   },
   {
     title: 'T-pose',

@@ -34,7 +34,7 @@ export default function App() {
     } finally {
       setProcessing(false)
     }
-  }, [])
+  }, [markerSize])
 
   const handleRetry = useCallback(() => {
     setResults(null)

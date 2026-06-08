@@ -12,7 +12,6 @@ import numpy as np
 import mediapipe.python.solutions.pose as mp_pose
 
 from measure import HEAD_OFFSET_RATIO
-from calibrate import MARKER_CM
 
 PoseLM = mp_pose.PoseLandmark
 
@@ -52,7 +51,7 @@ def _label(img: np.ndarray, text: str, pos: tuple[int, int],
                 cv2.LINE_AA)
 
 
-def _draw_marker(img: np.ndarray, corners: np.ndarray) -> None:
+def _draw_marker(img: np.ndarray, corners: np.ndarray, marker_cm: float) -> None:
     """Draw the ArUco marker boundary and corner dots."""
     pts = corners.astype(np.int32).reshape((-1, 1, 2))
     cv2.polylines(img, [pts], isClosed=True, color=COLOR_MARKER,
@@ -62,7 +61,7 @@ def _draw_marker(img: np.ndarray, corners: np.ndarray) -> None:
                    COLOR_MARKER, -1)
     # Label near the top-left corner.
     tl = corners[0]
-    _label(img, f"ArUco marker ({int(MARKER_CM)} cm)", (int(tl[0]), int(tl[1]) - 16),
+    _label(img, f"ArUco marker ({int(marker_cm)} cm)", (int(tl[0]), int(tl[1]) - 16),
            COLOR_MARKER)
 
 
@@ -149,6 +148,7 @@ def draw_diagnostics(
     all_hands_lms,
     results: dict,
     wingspan_pts: tuple | None = None,
+    marker_cm: float = 20.0,
 ) -> np.ndarray:
     """
     Return a copy of frame with measurement overlays drawn.
@@ -172,7 +172,7 @@ def draw_diagnostics(
 
     if marker_corners:
         for corners in marker_corners:
-            _draw_marker(img, corners)
+            _draw_marker(img, corners, marker_cm)
 
     if pose_lms is not None:
         if "height_cm" in results:
