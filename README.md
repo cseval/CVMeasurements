@@ -31,7 +31,7 @@ A web app that measures an athlete's **height**, **wingspan**, and **hand span**
 - Python + FastAPI
 - MediaPipe (pose and hand landmark detection)
 - OpenCV (ArUco marker detection and image processing)
-- Hosted on Render or Railway or AWS
+- Hosted on AWS App Runner
 
 **Key Python files**
 
@@ -50,18 +50,52 @@ A web app that measures an athlete's **height**, **wingspan**, and **hand span**
 
 ### Requirements
 
-- Python 3.10+
+- Python 3.11 (mediapipe does not support 3.12+)
 - Node.js 18+
 
 ### Install dependencies
 
 ```bash
 # Python
-pip install -r requirements.txt
+pip3 install -r requirements.txt
 
 # JavaScript
 npm install
 ```
+
+### Verify dependencies are installed
+
+After installing, confirm everything is in place:
+
+```bash
+# Check Python version (should be 3.11.x)
+python3 --version
+
+# Check all Python packages are satisfied (no errors = good)
+pip3 install -r requirements.txt --dry-run
+
+# Check Node.js version (should be 18+)
+node --version
+
+# Check Vite and React are present
+npm list vite react
+```
+
+All lines in the pip output should say "Requirement already satisfied". If any package is missing it will say "Would install" — run `pip3 install -r requirements.txt` to fix it.
+
+### Create a `.env` file
+
+Create a file named `.env` in the project root with the following keys (get values from the team):
+
+```
+DB_HOST=
+DB_PORT=3306
+DB_NAME=
+DB_USER=
+DB_PASSWORD=
+```
+
+The app will fail to start without this file.
 
 ### Generate and print the ArUco marker
 
@@ -132,12 +166,6 @@ python3 pipeline.py path/to/photo.jpg --debug
 
 Connect the repo to Vercel. Set the build command to `npm run build` and the output directory to `dist`. Update the `fetch('/api/measure', ...)` call in `src/App.jsx` to point at your deployed backend URL.
 
-**Backend → Render**
+**Backend → AWS App Runner**
 
-Connect the repo to Render as a Python web service. Set the start command to:
-
-```
-uvicorn server:app --host 0.0.0.0 --port $PORT
-```
-
-Render automatically installs from `requirements.txt`. HTTPS is provided automatically — no certificate warnings in production.
+The backend is deployed on AWS App Runner. App Runner reads the `Procfile` for the start command and installs from `requirements.txt` automatically. Environment variables (DB credentials) must be set in the App Runner service configuration. HTTPS is provided automatically — no certificate warnings in production.
