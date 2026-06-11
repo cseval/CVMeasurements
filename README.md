@@ -1,20 +1,23 @@
 # CV Measurements
 
-A web app that measures an athlete's **height**, **wingspan**, and **hand span** from a single photo taken on a phone. An operator points the camera at an athlete in a T-pose with a printed ArUco marker on the wall behind them — the app returns measurements in centimeters and shows an annotated photo with the measurement lines overlaid.
+A web app that measures an athlete's **height**, **wingspan**, and **hand span** from a single photo taken on a phone. An operator selects an event, picks a player from the event roster, then points the camera at the athlete in a T-pose with a printed ArUco marker on the wall behind them. The app returns measurements in centimeters, shows an annotated photo with the measurement lines overlaid, and saves the results to the database. A second screen lets the operator enter additional physical assessment data (age, weight, hip/t-spine/grip measurements) for the same player.
 
 ---
 
 ## How It Works
 
-1. The operator opens the app on their phone and points the camera at the athlete
-2. The athlete stands in a T-pose (arms fully extended, palms facing the camera) with the printed ArUco marker flat on the wall beside them
-3. The operator taps **CAP** to capture the photo
-4. The photo is sent to the Python backend which:
+1. The operator opens the app and searches for an event by name
+2. The operator selects the event — the roster of registered players loads automatically
+3. The operator selects a player from the roster
+4. The athlete stands in a T-pose (arms fully extended, palms facing the camera) with the printed ArUco marker flat on the wall beside them
+5. The operator taps **CAP** to capture the photo
+6. The photo is sent to the Python backend which:
    - Detects the ArUco marker to establish a pixel-per-cm scale
    - Runs MediaPipe Pose to locate body landmarks (nose, heels, fingertips)
    - Runs MediaPipe Hands for more accurate hand landmarks
    - Calculates height (estimated crown to heel), wingspan (middle finger tip to middle finger tip), and hand span (thumb tip to pinky tip)
-5. Results are returned with an annotated photo showing exactly which points were used
+7. Results are returned with an annotated photo showing exactly which points were used
+8. The operator saves the measurements to the database, then optionally enters additional assessment data (age, weight, hip rotation, t-spine rotation, grip strength)
 
 ---
 
@@ -35,14 +38,26 @@ A web app that measures an athlete's **height**, **wingspan**, and **hand span**
 
 **Key Python files**
 
-| File                 | Purpose                                                 |
-| -------------------- | ------------------------------------------------------- |
-| `server.py`          | FastAPI server — single `POST /api/measure` endpoint    |
-| `pipeline.py`        | Orchestrates the full measurement flow                  |
-| `calibrate.py`       | ArUco marker detection and px/cm scale calculation      |
-| `measure.py`         | Measurement math (height, wingspan, hand span)          |
-| `visualize.py`       | Draws annotated overlay image returned with results     |
-| `generate_marker.py` | One-time utility to generate the printable ArUco marker |
+| File                 | Purpose                                                        |
+| -------------------- | -------------------------------------------------------------- |
+| `server.py`          | FastAPI server — all API endpoints                             |
+| `db.py`              | Database queries (events, roster, save measurements)           |
+| `pipeline.py`        | Orchestrates the full measurement flow                         |
+| `calibrate.py`       | ArUco marker detection and px/cm scale calculation             |
+| `measure.py`         | Measurement math (height, wingspan, hand span)                 |
+| `visualize.py`       | Draws annotated overlay image returned with results            |
+| `generate_marker.py` | One-time utility to generate the printable ArUco marker        |
+
+**API endpoints**
+
+| Endpoint                          | Purpose                                      |
+| --------------------------------- | -------------------------------------------- |
+| `GET /api/events`                 | Search events by name                        |
+| `GET /api/events/{id}/roster`     | Get player roster for an event               |
+| `GET /api/athletes/{id}/status`   | Check if a player already has a DB row       |
+| `POST /api/measure`               | Run CV pipeline on a photo                   |
+| `POST /api/save`                  | Save height/wingspan/hand span to DB         |
+| `POST /api/save_additional`       | Save additional assessment data to DB        |
 
 ---
 
@@ -166,6 +181,14 @@ python3 pipeline.py path/to/photo.jpg --debug
 
 Connect the repo to Vercel. Set the build command to `npm run build` and the output directory to `dist`. Update the `fetch('/api/measure', ...)` call in `src/App.jsx` to point at your deployed backend URL.
 
-**Backend → AWS App Runner**
+**Backend → Azure App Service**
 
-The backend is deployed on AWS App Runner. App Runner reads the `Procfile` for the start command and installs from `requirements.txt` automatically. Environment variables (DB credentials) must be set in the App Runner service configuration. HTTPS is provided automatically — no certificate warnings in production.
+The backend is deployed on Azure App Service (Python 3.11, Linux). Set the start command in Configuration → General Settings:
+
+```
+uvicorn server:app --host 0.0.0.0 --port 8000
+```
+
+Add the DB credentials as environment variables in Configuration → Application Settings. HTTPS is provided automatically.
+
+> Before deploying, update all `fetch('/api/...', ...)` calls in `src/App.jsx` and `src/components/Results.jsx` to use the full Azure backend URL (e.g. `https://your-app.azurewebsites.net/api/...`).
