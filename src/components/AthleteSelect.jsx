@@ -3,39 +3,63 @@ import { useState, useEffect, useCallback } from 'react'
 const MARKER_SIZES = [12, 16, 20]
 
 export default function AthleteSelect({ onSelect }) {
-  const [query,      setQuery]     = useState('')
-  const [results,    setResults]   = useState([])
-  const [loading,    setLoading]   = useState(false)
-  const [error,      setError]     = useState(null)
-  const [markerSize, setMarkerSize] = useState(20)
+  const [query,         setQuery]         = useState('')
+  const [events,        setEvents]        = useState([])
+  const [selectedEvent, setSelectedEvent] = useState(null)
+  const [roster,        setRoster]        = useState([])
+  const [loading,       setLoading]       = useState(false)
+  const [rosterLoading, setRosterLoading] = useState(false)
+  const [error,         setError]         = useState(null)
+  const [markerSize,    setMarkerSize]    = useState(20)
 
-  const search = useCallback(async (q) => {
-    if (!q.trim()) { setResults([]); return }
+  const searchEvents = useCallback(async (q) => {
+    if (!q.trim()) { setEvents([]); return }
     setLoading(true)
     setError(null)
     try {
-      const res  = await fetch(`/api/athletes?q=${encodeURIComponent(q)}`)
+      const res  = await fetch(`/api/events?q=${encodeURIComponent(q)}`)
       const data = await res.json()
-      setResults(data)
+      setEvents(data)
     } catch {
-      setError('Could not load athletes')
+      setError('Could not load events')
     } finally {
       setLoading(false)
     }
   }, [])
 
   useEffect(() => {
-    const t = setTimeout(() => search(query), 300)
+    const t = setTimeout(() => searchEvents(query), 300)
     return () => clearTimeout(t)
-  }, [query, search])
+  }, [query, searchEvents])
 
-  async function handleSelect(athlete) {
+  async function handleEventSelect(event) {
+    setSelectedEvent(event)
+    setRoster([])
+    setRosterLoading(true)
+    setError(null)
     try {
-      const res    = await fetch(`/api/athletes/${athlete.id}/status`)
-      const status = await res.json()
-      onSelect({ ...athlete, status }, markerSize)
+      const res  = await fetch(`/api/events/${event.id}/roster`)
+      const data = await res.json()
+      setRoster(data)
     } catch {
-      onSelect({ ...athlete, status: { exists: false, has_data: false, row_id: null } }, markerSize)
+      setError('Could not load roster')
+    } finally {
+      setRosterLoading(false)
+    }
+  }
+
+  function handleChangeEvent() {
+    setSelectedEvent(null)
+    setRoster([])
+  }
+
+  async function handlePlayerSelect(player) {
+    try {
+      const res    = await fetch(`/api/athletes/${player.id}/status`)
+      const status = await res.json()
+      onSelect({ ...player, status, event_id: selectedEvent.id }, markerSize)
+    } catch {
+      onSelect({ ...player, status: { exists: false, has_data: false, row_id: null }, event_id: selectedEvent.id }, markerSize)
     }
   }
 
@@ -65,43 +89,74 @@ export default function AthleteSelect({ onSelect }) {
         <div className="setup-divider" />
 
         <div className="setup-step">
-          <p className="setup-step-label">Step 2 — Select athlete</p>
+          <p className="setup-step-label">Step 2 — Search event</p>
 
-          <input
-            className="athlete-search"
-            type="text"
-            placeholder="Search by first or last name…"
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-            autoFocus
-          />
-
-          {error && <div className="error-card">{error}</div>}
-          {loading && <p className="athlete-hint">Searching…</p>}
-          {!loading && results.length === 0 && query.trim() && (
-            <p className="athlete-hint">No athletes found</p>
+          {!selectedEvent ? (
+            <>
+              <input
+                className="athlete-search"
+                type="text"
+                placeholder="Search by event name…"
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                autoFocus
+              />
+              {error && <div className="error-card">{error}</div>}
+              {loading && <p className="athlete-hint">Searching…</p>}
+              {!loading && events.length === 0 && query.trim() && (
+                <p className="athlete-hint">No events found</p>
+              )}
+              <div className="athlete-list">
+                {events.map(e => (
+                  <button
+                    key={e.id}
+                    className="athlete-row"
+                    onClick={() => handleEventSelect(e)}
+                  >
+                    <span className="athlete-name">{e.name}</span>
+                    <span className="athlete-id">{e.date}{e.city ? ` · ${e.city}, ${e.state}` : ''}</span>
+                  </button>
+                ))}
+              </div>
+            </>
+          ) : (
+            <div className="event-selected-banner">
+              <span className="event-selected-name">{selectedEvent.name}</span>
+              <button className="event-change-btn" onClick={handleChangeEvent}>Change</button>
+            </div>
           )}
-
-          <div className="athlete-list">
-            {results.map(a => (
-              <button
-                key={a.id}
-                className="athlete-row"
-                onClick={() => handleSelect(a)}
-              >
-                <span className="athlete-name">{a.first_name} {a.last_name}</span>
-                <span className="athlete-id">#{a.id}</span>
-              </button>
-            ))}
-          </div>
-
-          <div className="test-mode-divider">
-            <span>or</span>
-          </div>
-          <button className="test-mode-btn" onClick={() => onSelect(null, markerSize)}>
-            Test Mode
-          </button>
         </div>
+
+        {selectedEvent && (
+          <>
+            <div className="setup-divider" />
+            <div className="setup-step">
+              <p className="setup-step-label">Step 3 — Select player</p>
+              {error && <div className="error-card">{error}</div>}
+              {rosterLoading && <p className="athlete-hint">Loading roster…</p>}
+              {!rosterLoading && roster.length === 0 && (
+                <p className="athlete-hint">No players found for this event</p>
+              )}
+              <div className="athlete-list">
+                {roster.map(p => (
+                  <button
+                    key={p.id}
+                    className="athlete-row"
+                    onClick={() => handlePlayerSelect(p)}
+                  >
+                    <span className="athlete-name">{p.first_name} {p.last_name}</span>
+                    <span className="athlete-id">#{p.id}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+
+        <div className="test-mode-divider"><span>or</span></div>
+        <button className="test-mode-btn" onClick={() => onSelect(null, markerSize)}>
+          Test Mode
+        </button>
 
       </div>
     </div>

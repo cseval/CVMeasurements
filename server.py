@@ -11,7 +11,7 @@ from fastapi import FastAPI, File, Form, UploadFile, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from pipeline import run
-from db import search_athletes, get_athlete_status, upsert_measurement, update_additional
+from db import search_athletes, search_events, get_event_roster, get_athlete_status, upsert_measurement, update_additional
 
 app = FastAPI()
 app.add_middleware(
@@ -26,6 +26,22 @@ app.add_middleware(
 async def athletes(q: str = Query(default="")):
     try:
         return search_athletes(q)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/events")
+async def events(q: str = Query(default="")):
+    try:
+        return search_events(q)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/events/{event_id}/roster")
+async def event_roster(event_id: int):
+    try:
+        return get_event_roster(event_id)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -45,6 +61,8 @@ class SaveRequest(BaseModel):
     height_cm:     float
     wingspan_cm:   float
     hand_width_cm: float
+    event_id:      int | None = None
+    user_id:       int | None = None
 
 
 @app.post("/api/save")
@@ -53,6 +71,7 @@ async def save(req: SaveRequest):
         row_id, action = upsert_measurement(
             req.player_id, req.first_name, req.last_name,
             req.height_cm, req.wingspan_cm, req.hand_width_cm,
+            req.event_id, req.user_id,
         )
         return {"id": row_id, "action": action}
     except Exception as e:

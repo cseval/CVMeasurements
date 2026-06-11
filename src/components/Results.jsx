@@ -97,6 +97,8 @@ export default function Results({ results, error, warnings, athlete, onRetry, on
           height_cm:     display.height_cm,
           wingspan_cm:   display.wingspan_cm,
           hand_width_cm: display.hand_width_cm,
+          event_id:      athlete.event_id ?? null,
+          user_id:       athlete.user_id ?? null,
         }),
       })
       if (!res.ok) {

@@ -46,6 +46,47 @@ def search_athletes(query: str) -> list[dict]:
     return results
 
 
+def search_events(query: str) -> list[dict]:
+    tokens = query.strip().split()
+    if not tokens:
+        return []
+    conn = _connect()
+    cursor = conn.cursor(dictionary=True)
+    conditions = ' AND '.join(['EventName LIKE %s'] * len(tokens))
+    params = [f'%{t}%' for t in tokens]
+    cursor.execute(
+        f"""SELECT CSE_EventID AS id, EventName AS name, Date AS date,
+                   City AS city, State AS state
+            FROM events
+            WHERE {conditions}
+            ORDER BY Date DESC
+            LIMIT 20""",
+        params,
+    )
+    results = cursor.fetchall()
+    conn.close()
+    return [
+        {**r, 'date': r['date'].isoformat() if r['date'] else None}
+        for r in results
+    ]
+
+
+def get_event_roster(event_id: int) -> list[dict]:
+    conn = _connect()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute(
+        """SELECT DISTINCT a.first_name, a.last_name, p.CSE_PlayerID AS id, a.userid AS user_id
+           FROM attendees a
+           INNER JOIN player p ON a.userid = p.UserID
+           WHERE a.event_id = %s
+           ORDER BY a.last_name, a.first_name""",
+        (event_id,),
+    )
+    results = cursor.fetchall()
+    conn.close()
+    return results
+
+
 def update_additional(row_id: int, fields: dict) -> None:
     allowed = {
         'age', 'weight',
@@ -104,6 +145,8 @@ def upsert_measurement(
     height_cm: float,
     wingspan_cm: float,
     hand_width_cm: float,
+    event_id: int | None = None,
+    user_id: int | None = None,
 ) -> tuple[int, str]:
     """
     Smart save:
@@ -125,9 +168,11 @@ def upsert_measurement(
     if status['exists']:
         cursor.execute(
             """UPDATE lab_movement_screen
-               SET height = %s, wingspan = %s, hand_size = %s
+               SET height = %s, wingspan = %s, hand_size = %s,
+                   event_id = COALESCE(%s, event_id),
+                   user_id = COALESCE(%s, user_id)
                WHERE id = %s""",
-            (height_str, wingspan_in, hand_in, status['row_id']),
+            (height_str, wingspan_in, hand_in, event_id, user_id, status['row_id']),
         )
         row_id = status['row_id']
         action = 'updated'
@@ -135,12 +180,12 @@ def upsert_measurement(
         cursor.execute(
             """INSERT INTO lab_movement_screen
                (cse_player_id, first_name, last_name, height, wingspan,
-                hand_size, screen_id, session_date, assessment_date)
-               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+                hand_size, screen_id, session_date, assessment_date, event_id, user_id)
+               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
             (
                 player_id, first_name, last_name,
                 height_str, wingspan_in, hand_in,
-                str(uuid.uuid4()), today, today,
+                str(uuid.uuid4()), today, today, event_id, user_id,
             ),
         )
         row_id = cursor.lastrowid
