@@ -3,6 +3,7 @@ import Camera from './components/Camera.jsx'
 import Results from './components/Results.jsx'
 import Instructions from './components/Instructions.jsx'
 import AthleteSelect from './components/AthleteSelect.jsx'
+import AdditionalInfo from './components/AdditionalInfo.jsx'
 import './App.css'
 
 export default function App() {
@@ -12,6 +13,7 @@ export default function App() {
   const [error,      setError]    = useState(null)
   const [athlete,    setAthlete]  = useState(null)  // {id, first_name, last_name, existing}
   const [markerSize, setMarkerSize] = useState(20)
+  const [rowId,      setRowId]    = useState(null)
 
   const handleCapture = useCallback(async (blob) => {
     setProcessing(true)
@@ -42,6 +44,19 @@ export default function App() {
     setScreen('camera')
   }, [])
 
+  const handleContinueToAdditional = useCallback((id) => {
+    setRowId(id)
+    setScreen('additional')
+  }, [])
+
+  const handleAdditionalDone = useCallback(() => {
+    setResults(null)
+    setError(null)
+    setAthlete(null)
+    setRowId(null)
+    setScreen('athlete')
+  }, [])
+
   const handleAthleteSelect = useCallback((selected, size) => {
     setAthlete(selected)
     setMarkerSize(size)
@@ -57,6 +72,15 @@ export default function App() {
   if (screen === 'camera') {
     return <Camera onCapture={handleCapture} disabled={processing} />
   }
+  if (screen === 'additional') {
+    return (
+      <AdditionalInfo
+        rowId={rowId}
+        athlete={athlete}
+        onDone={handleAdditionalDone}
+      />
+    )
+  }
   return (
     <Results
       results={results}
@@ -64,6 +88,7 @@ export default function App() {
       warnings={results?.warnings}
       athlete={athlete}
       onRetry={handleRetry}
+      onContinue={handleContinueToAdditional}
     />
   )
 }

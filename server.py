@@ -11,7 +11,7 @@ from fastapi import FastAPI, File, Form, UploadFile, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from pipeline import run
-from db import search_athletes, get_athlete_status, upsert_measurement
+from db import search_athletes, get_athlete_status, upsert_measurement, update_additional
 
 app = FastAPI()
 app.add_middleware(
@@ -55,6 +55,30 @@ async def save(req: SaveRequest):
             req.height_cm, req.wingspan_cm, req.hand_width_cm,
         )
         return {"id": row_id, "action": action}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class AdditionalInfoRequest(BaseModel):
+    row_id:              int
+    age:                 int | None = None
+    weight:              int | None = None
+    hips_r_hip_er:       int | None = None
+    hips_r_hip_ir:       int | None = None
+    hips_l_hip_er:       int | None = None
+    hips_l_hip_ir:       int | None = None
+    tspine_tspine_rot_l: int | None = None
+    tspine_tspine_rot_r: int | None = None
+    grip_grip_str_r:     int | None = None
+    grip_grip_str_l:     int | None = None
+
+
+@app.post("/api/save_additional")
+async def save_additional(req: AdditionalInfoRequest):
+    try:
+        fields = req.model_dump(exclude={'row_id'})
+        update_additional(req.row_id, fields)
+        return {"ok": True}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

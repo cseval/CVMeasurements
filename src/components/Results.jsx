@@ -53,11 +53,12 @@ function compositeAdjusted(debugImageB64, pts, baseScale, imgW, imgH) {
   })
 }
 
-export default function Results({ results, error, warnings, athlete, onRetry }) {
+export default function Results({ results, error, warnings, athlete, onRetry, onContinue }) {
   const [adjusting, setAdjusting]     = useState(false)
   const [adjustedVals, setAdjusted]   = useState({})
   const [adjustedImage, setAdjImage]  = useState(null)
-  const [saveState, setSaveState]     = useState('idle') // idle | saving | saved | error
+  const [saveState, setSaveState]     = useState('idle') // idle | saving | saved | updated | error
+  const [savedRowId, setSavedRowId]   = useState(null)
   const canvasRef                     = useRef(null)
 
   const canAdjust = !!(results?.endpoints && results?.raw_image)
@@ -103,6 +104,7 @@ export default function Results({ results, error, warnings, athlete, onRetry }) 
         throw new Error(body.detail || `Server error ${res.status}`)
       }
       const data = await res.json()
+      setSavedRowId(data.id)
       setSaveState(data.action === 'updated' ? 'updated' : 'saved')
     } catch (err) {
       setSaveState('error')
@@ -221,9 +223,16 @@ export default function Results({ results, error, warnings, athlete, onRetry }) 
         )}
 
         {(saveState === 'saved' || saveState === 'updated') && (
-          <div className="save-success">
-            {saveState === 'updated' ? 'Measurements updated' : 'Measurements saved'}
-          </div>
+          <>
+            <div className="save-success">
+              {saveState === 'updated' ? 'Measurements updated' : 'Measurements saved'}
+            </div>
+            {onContinue && (
+              <button className="retry-btn" onClick={() => onContinue(savedRowId)}>
+                Add Additional Info
+              </button>
+            )}
+          </>
         )}
 
         {saveState === 'error' && (

@@ -46,6 +46,27 @@ def search_athletes(query: str) -> list[dict]:
     return results
 
 
+def update_additional(row_id: int, fields: dict) -> None:
+    allowed = {
+        'age', 'weight',
+        'hips_r_hip_er', 'hips_r_hip_ir', 'hips_l_hip_er', 'hips_l_hip_ir',
+        'tspine_tspine_rot_l', 'tspine_tspine_rot_r',
+        'grip_grip_str_r', 'grip_grip_str_l',
+    }
+    updates = {k: v for k, v in fields.items() if k in allowed and v is not None}
+    if not updates:
+        return
+    set_clause = ', '.join(f'{k} = %s' for k in updates)
+    conn = _connect()
+    cursor = conn.cursor()
+    cursor.execute(
+        f'UPDATE lab_movement_screen SET {set_clause} WHERE id = %s',
+        (*updates.values(), row_id),
+    )
+    conn.commit()
+    conn.close()
+
+
 def get_athlete_status(player_id: int) -> dict:
     """
     Check whether this player has a row in lab_movement_screen and whether
