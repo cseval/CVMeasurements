@@ -22,7 +22,7 @@ export default function App() {
       const formData = new FormData()
       formData.append('image', blob, 'capture.jpg')
       formData.append('marker_cm', markerSize)
-      const res = await fetch('/api/measure', { method: 'POST', body: formData })
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/measure`, { method: 'POST', body: formData })
       if (!res.ok) {
         const body = await res.json().catch(() => ({}))
         throw new Error(body.detail || `Server error ${res.status}`)
