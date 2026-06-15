@@ -17,7 +17,7 @@ export default function AthleteSelect({ onSelect }) {
     setLoading(true)
     setError(null)
     try {
-      const res  = await fetch(`/api/events?q=${encodeURIComponent(q)}`)
+      const res  = await fetch(`${import.meta.env.VITE_API_URL}/api/events?q=${encodeURIComponent(q)}`)
       const data = await res.json()
       setEvents(data)
     } catch {
@@ -38,7 +38,7 @@ export default function AthleteSelect({ onSelect }) {
     setRosterLoading(true)
     setError(null)
     try {
-      const res  = await fetch(`/api/events/${event.id}/roster`)
+      const res  = await fetch(`${import.meta.env.VITE_API_URL}/api/events/${event.id}/roster`)
       const data = await res.json()
       setRoster(data)
     } catch {
@@ -55,7 +55,7 @@ export default function AthleteSelect({ onSelect }) {
 
   async function handlePlayerSelect(player) {
     try {
-      const res    = await fetch(`/api/athletes/${player.id}/status`)
+      const res    = await fetch(`${import.meta.env.VITE_API_URL}/api/athletes/${player.id}/status`)
       const status = await res.json()
       onSelect({ ...player, status, event_id: selectedEvent.id }, markerSize)
     } catch {
