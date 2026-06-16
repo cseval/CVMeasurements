@@ -34,7 +34,7 @@ A web app that measures an athlete's **height**, **wingspan**, and **hand span**
 - Python + FastAPI
 - MediaPipe (pose and hand landmark detection)
 - OpenCV (ArUco marker detection and image processing)
-- Hosted on AWS App Runner
+- Hosted on Azure App Service
 
 **Key Python files**
 
@@ -177,18 +177,176 @@ python3 pipeline.py path/to/photo.jpg --debug
 
 ## Deployment
 
-**Frontend → Vercel**
+The production deployment is split:
 
-Connect the repo to Vercel. Set the build command to `npm run build` and the output directory to `dist`. Update the `fetch('/api/measure', ...)` call in `src/App.jsx` to point at your deployed backend URL.
+- **Backend:** Azure App Service for Linux, Python 3.11
+- **Frontend:** Vercel, Vite static build
 
-**Backend → Azure App Service**
+### Backend - Azure App Service
 
-The backend is deployed on Azure App Service (Python 3.11, Linux). Set the start command in Configuration → General Settings:
+Use a Linux App Service with Python 3.11. Do not use the Free/Shared tier for this app; MediaPipe and OpenCV need real CPU and memory. Start with at least `B2`, and move to a production tier such as `P1v3` if startup or measurement processing is slow.
 
+Create or scale the App Service Plan:
+
+```bash
+az appservice plan create \
+  --resource-group rg-cvmeasurements \
+  --name asp-cvmeasurements \
+  --is-linux \
+  --sku B2
 ```
-uvicorn server:app --host 0.0.0.0 --port 8000
+
+Create the web app if it does not already exist:
+
+```bash
+az webapp create \
+  --resource-group rg-cvmeasurements \
+  --plan asp-cvmeasurements \
+  --name cvmeasurements-api \
+  --runtime "PYTHON|3.11"
 ```
 
-Add the DB credentials as environment variables in Configuration → Application Settings. HTTPS is provided automatically.
+Set the startup command:
 
-> Before deploying, update all `fetch('/api/...', ...)` calls in `src/App.jsx` and `src/components/Results.jsx` to use the full Azure backend URL (e.g. `https://your-app.azurewebsites.net/api/...`).
+```bash
+az webapp config set \
+  --resource-group rg-cvmeasurements \
+  --name cvmeasurements-api \
+  --startup-file "python -m uvicorn server:app --host 0.0.0.0 --port 8000"
+```
+
+Set application settings. `SCM_DO_BUILD_DURING_DEPLOYMENT=true` tells Azure/Oryx to install Python dependencies during deployment. `POST_BUILD_COMMAND` removes the GUI OpenCV package that MediaPipe can pull in and keeps only the headless OpenCV package required on Azure Linux.
+
+```bash
+az webapp config appsettings set \
+  --resource-group rg-cvmeasurements \
+  --name cvmeasurements-api \
+  --settings \
+    SCM_DO_BUILD_DURING_DEPLOYMENT=true \
+    POST_BUILD_COMMAND="bash scripts/azure_post_build.sh" \
+    DB_HOST="..." \
+    DB_PORT="3306" \
+    DB_NAME="..." \
+    DB_USER="..." \
+    DB_PASSWORD="..."
+```
+
+If App Service authentication is enabled, allow anonymous API access or turn it off:
+
+```bash
+az webapp auth update \
+  --resource-group rg-cvmeasurements \
+  --name cvmeasurements-api \
+  --enabled false
+```
+
+Restart after configuration changes:
+
+```bash
+az webapp restart \
+  --resource-group rg-cvmeasurements \
+  --name cvmeasurements-api
+```
+
+### GitHub Actions Deployment to Azure
+
+Use Azure App Service Deployment Center:
+
+1. Open the Azure App Service.
+2. Go to **Deployment Center**.
+3. Source: **GitHub**.
+4. Provider: **GitHub Actions**.
+5. Organization: `cseval`.
+6. Repository: `CVMeasurements`.
+7. Branch: `azure-deploy` or your production branch.
+8. Authentication: **User-assigned identity**. Select an existing managed identity or create a new one. The identity needs `Website Contributor` on the App Service.
+9. Save the setup.
+
+Azure should create a workflow under `.github/workflows/`. A successful run deploys the repository to the App Service, then Oryx installs `requirements.txt`.
+
+After deployment, test the backend:
+
+```text
+https://cvmeasurements-api.azurewebsites.net/api/events?q=test
+```
+
+Expected result: a JSON array. An empty array is fine if no event matches `test`.
+
+### Frontend - Vercel
+
+Connect the same GitHub repo to Vercel.
+
+Use these build settings:
+
+```text
+Framework Preset: Vite
+Build Command: npm run build
+Output Directory: dist
+Install Command: npm ci
+```
+
+The frontend currently calls relative `/api/...` paths. In production, add a Vercel rewrite so those calls are proxied to Azure:
+
+```json
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://cvmeasurements-api.azurewebsites.net/api/:path*"
+    }
+  ]
+}
+```
+
+Alternatively, refactor the frontend fetch calls to use a `VITE_API_BASE_URL` environment variable and set that value in Vercel.
+
+### Deployment Troubleshooting
+
+**GitHub deploy fails with `Site Disabled (CODE: 403)`**
+
+Check the App Service state:
+
+```bash
+az webapp show \
+  --resource-group rg-cvmeasurements \
+  --name cvmeasurements-api \
+  --query "{state:state, enabled:enabled, publicNetworkAccess:publicNetworkAccess}" \
+  -o table
+```
+
+If `state` is `QuotaExceeded`, scale the App Service Plan up from Free/Shared to at least `B2`:
+
+```bash
+az appservice plan update \
+  --resource-group rg-cvmeasurements \
+  --name asp-cvmeasurements \
+  --sku B2
+```
+
+**Startup fails with `ImportError: libxcb.so... cannot open shared object file`**
+
+Azure has installed a GUI OpenCV wheel. Confirm:
+
+- `requirements.txt` uses `opencv-contrib-python-headless`
+- `POST_BUILD_COMMAND` is set to `bash scripts/azure_post_build.sh`
+- the latest commit was deployed
+
+Then redeploy and check the startup logs for:
+
+```text
+OpenCV 4.10.0 loaded from ...
+```
+
+**Backend returns 403**
+
+Check:
+
+- You are using `https://cvmeasurements-api.azurewebsites.net/api/...`, not the `.scm.azurewebsites.net` URL
+- App Service authentication is off or allows unauthenticated requests
+- Public network access is enabled
+- Access restrictions are not blocking your IP
+
+**Backend returns 500**
+
+Open App Service **Log stream** and retry the request. Common causes are missing DB application settings, MySQL network/firewall rules, or invalid DB credentials.
