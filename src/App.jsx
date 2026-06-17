@@ -70,7 +70,7 @@ export default function App() {
     return <AthleteSelect onSelect={handleAthleteSelect} />
   }
   if (screen === 'camera') {
-    return <Camera onCapture={handleCapture} disabled={processing} />
+    return <Camera onCapture={handleCapture} onBack={() => setScreen('athlete')} disabled={processing} />
   }
   if (screen === 'additional') {
     return (

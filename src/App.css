@@ -173,6 +173,35 @@ h1, h2, h3 {
   pointer-events: none;
 }
 
+.camera-back-btn {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.45);
+  border: 1px solid rgba(255,255,255,0.25);
+  color: #fff;
+  font-size: 22px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 2;
+  transition: background 0.15s, opacity 0.2s;
+}
+
+.camera-back-btn:active {
+  background: rgba(0,0,0,0.6);
+}
+
+.camera-back-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 /* Status badge — top center */
 .status-badge {
   position: absolute;
