@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
 import BrandBar from './BrandBar.jsx';
 
-export default function Camera({ onCapture, disabled }) {
+export default function Camera({ onCapture, onBack, disabled }) {
   const videoRef = useRef(null);
   const [streamReady, setStreamReady] = useState(false);
   const [cameraError, setCameraError] = useState(null);
@@ -59,6 +59,7 @@ export default function Camera({ onCapture, disabled }) {
       <div className="camera-screen">
         <BrandBar />
         <div style={{ padding: 24 }}>
+          <button className="camera-back-btn" style={{ position: 'static', marginBottom: 16 }} onClick={onBack} aria-label="Back">×</button>
           <div className="error-card">Camera error: {cameraError}</div>
         </div>
       </div>
@@ -72,6 +73,8 @@ export default function Camera({ onCapture, disabled }) {
       <BrandBar />
       <div className="camera-wrapper">
         <video ref={videoRef} className="camera-video" autoPlay playsInline muted />
+
+        <button className="camera-back-btn" onClick={onBack} disabled={disabled} aria-label="Back">×</button>
 
         {isCounting && (
           <div className="countdown-overlay">
