@@ -1,11 +1,16 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import basicSsl from '@vitejs/plugin-basic-ssl'
 
-export default defineConfig({
-  plugins: [react()],
+export default defineConfig(({ command }) => ({
+  plugins: [
+    react(),
+    ...(command === 'serve' ? [basicSsl()] : []),
+  ],
   server: {
+    https: true,
     proxy: {
       '/api': 'http://localhost:8000',
     },
   },
-})
+}))
