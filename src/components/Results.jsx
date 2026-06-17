@@ -1,5 +1,7 @@
 import { useState, useRef } from 'react'
 import AdjustCanvas from './AdjustCanvas.jsx'
+import BrandBar from './BrandBar.jsx'
+import tcSymbol from '../assets/TC_Symbol_RedBlue.png'
 
 function cmToFtIn(cm) {
   const totalInches = cm / 2.54
@@ -123,8 +125,10 @@ export default function Results({ results, error, warnings, athlete, onRetry, on
   if (error) {
     return (
       <div className="results-screen">
+        <BrandBar />
         <div className="results-header">
           <h1>Measurement Failed</h1>
+          <img src={tcSymbol} alt="Triple Crown Sports" className="tc-mark" />
         </div>
         <div className="results-body">
           <div className="error-card">{error}</div>
@@ -146,10 +150,13 @@ export default function Results({ results, error, warnings, athlete, onRetry, on
 
   return (
     <div className="results-screen">
+      <BrandBar />
       <div className="results-header">
         <h1>{adjusting ? 'Adjust Lines' : 'Measurements'}</h1>
-        {adjusting && (
+        {adjusting ? (
           <button className="done-btn" onClick={handleDone}>Done</button>
+        ) : (
+          <img src={tcSymbol} alt="Triple Crown Sports" className="tc-mark" />
         )}
       </div>
 
