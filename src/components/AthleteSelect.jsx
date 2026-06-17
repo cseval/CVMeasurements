@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
+import BrandBar from './BrandBar.jsx'
+import tcSymbol from '../assets/TC_Symbol_RedBlue.png'
 
 const MARKER_SIZES = [12, 16, 20]
 
@@ -65,8 +67,10 @@ export default function AthleteSelect({ onSelect }) {
 
   return (
     <div className="athlete-screen">
+      <BrandBar />
       <div className="athlete-header">
         <h1>Setup</h1>
+        <img src={tcSymbol} alt="Triple Crown Sports" className="tc-mark" />
       </div>
 
       <div className="athlete-body">

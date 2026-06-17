@@ -1,11 +1,12 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
+import BrandBar from './BrandBar.jsx';
 
 export default function Camera({ onCapture, disabled }) {
   const videoRef = useRef(null);
   const [streamReady, setStreamReady] = useState(false);
   const [cameraError, setCameraError] = useState(null);
   const [countdown, setCountdown] = useState(null);
-  const [useCountdown, setUseCountdown] = useState(true);
+  const [useCountdown, setUseCountdown] = useState(false);
 
   useEffect(() => {
     let stream;
@@ -56,6 +57,7 @@ export default function Camera({ onCapture, disabled }) {
   if (cameraError) {
     return (
       <div className="camera-screen">
+        <BrandBar />
         <div style={{ padding: 24 }}>
           <div className="error-card">Camera error: {cameraError}</div>
         </div>
@@ -67,6 +69,7 @@ export default function Camera({ onCapture, disabled }) {
 
   return (
     <div className="camera-screen">
+      <BrandBar />
       <div className="camera-wrapper">
         <video ref={videoRef} className="camera-video" autoPlay playsInline muted />
 
