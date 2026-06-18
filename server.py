@@ -9,9 +9,11 @@ except ImportError:
 
 from fastapi import FastAPI, File, Form, UploadFile, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import Response
 from pydantic import BaseModel
 from pipeline import run
 from db import search_athletes, search_events, get_event_roster, get_athlete_status, upsert_measurement, update_additional
+from generate_marker import marker_square_png_bytes, ALL_SIZES
 
 app = FastAPI()
 app.add_middleware(
@@ -100,6 +102,14 @@ async def save_additional(req: AdditionalInfoRequest):
         return {"ok": True}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/marker/{cm}")
+async def marker(cm: float):
+    if cm not in ALL_SIZES:
+        raise HTTPException(status_code=400, detail=f"Marker size must be one of {ALL_SIZES}")
+    png_bytes = marker_square_png_bytes(cm)
+    return Response(content=png_bytes, media_type="image/png")
 
 
 @app.post("/api/measure")

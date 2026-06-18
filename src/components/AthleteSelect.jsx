@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import BrandBar from './BrandBar.jsx'
 
 const MARKER_SIZES = [12, 16, 20]
@@ -12,6 +12,7 @@ export default function AthleteSelect({ onSelect }) {
   const [rosterLoading, setRosterLoading] = useState(false)
   const [error,         setError]         = useState(null)
   const [markerSize,    setMarkerSize]    = useState(20)
+  const markerImgRef                      = useRef(null)
 
   const searchEvents = useCallback(async (q) => {
     if (!q.trim()) { setEvents([]); return }
@@ -49,6 +50,16 @@ export default function AthleteSelect({ onSelect }) {
     }
   }
 
+  function handlePrintMarker() {
+    const img = markerImgRef.current
+    if (!img) return
+    if (img.complete) {
+      window.print()
+    } else {
+      img.onload = () => window.print()
+    }
+  }
+
   function handleChangeEvent() {
     setSelectedEvent(null)
     setRoster([])
@@ -75,16 +86,21 @@ export default function AthleteSelect({ onSelect }) {
 
         <div className="setup-step">
           <p className="setup-step-label">Step 1 — Marker size</p>
-          <div className="marker-size-options">
-            {MARKER_SIZES.map(s => (
-              <button
-                key={s}
-                className={`marker-size-btn${markerSize === s ? ' active' : ''}`}
-                onClick={() => setMarkerSize(s)}
-              >
-                {s} cm
-              </button>
-            ))}
+          <div className="marker-size-row">
+            <div className="marker-size-options">
+              {MARKER_SIZES.map(s => (
+                <button
+                  key={s}
+                  className={`marker-size-btn${markerSize === s ? ' active' : ''}`}
+                  onClick={() => setMarkerSize(s)}
+                >
+                  {s} cm
+                </button>
+              ))}
+            </div>
+            <button className="print-marker-btn" onClick={handlePrintMarker}>
+              Print Marker
+            </button>
           </div>
         </div>
 
@@ -160,6 +176,19 @@ export default function AthleteSelect({ onSelect }) {
           Test Mode
         </button>
 
+      </div>
+
+      <div className="marker-print-sheet">
+        <img
+          ref={markerImgRef}
+          src={`${import.meta.env.VITE_API_URL}/api/marker/${markerSize}`}
+          alt=""
+          className="marker-print-img"
+          style={{ width: `${markerSize}cm`, height: `${markerSize}cm` }}
+        />
+        <p className="marker-print-label">
+          Print at 100% / actual size — black square must measure exactly {markerSize} cm × {markerSize} cm
+        </p>
       </div>
     </div>
   )

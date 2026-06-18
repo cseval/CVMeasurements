@@ -779,6 +779,14 @@ h1, h2, h3 {
   margin: 20px 0;
 }
 
+.marker-size-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .marker-size-options {
   display: flex;
   gap: 8px;
@@ -801,6 +809,23 @@ h1, h2, h3 {
   background: var(--navy-800);
   border-color: var(--navy-800);
   color: #fff;
+}
+
+.print-marker-btn {
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  background: var(--white);
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.print-marker-btn:active {
+  background: var(--cream);
 }
 
 .test-mode-divider {
@@ -975,4 +1000,45 @@ h1, h2, h3 {
   font-family: var(--font-body);
   font-size: 14px;
   line-height: 1.5;
+}
+
+/* ── Marker print sheet ── */
+.marker-print-sheet {
+  display: none;
+}
+
+/* Landscape gives the 20cm marker enough page width to survive a printer's
+   minimum margin — in portrait it's wider than a 21cm A4/Letter page once
+   any margin at all is applied. */
+@page {
+  size: landscape;
+  margin: 0.4cm;
+}
+
+@media print {
+  body {
+    background: #fff;
+  }
+  body * {
+    visibility: hidden;
+  }
+  .marker-print-sheet,
+  .marker-print-sheet * {
+    visibility: visible;
+  }
+  .marker-print-sheet {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+  }
+  .marker-print-img {
+    display: block;
+  }
+  .marker-print-label {
+    margin-top: 0.3cm;
+    font-family: var(--font-body);
+    font-size: 12pt;
+    color: #000;
+  }
 }
