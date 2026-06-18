@@ -12,6 +12,7 @@ Usage:
 """
 
 import argparse
+import io
 import cv2
 import numpy as np
 from pathlib import Path
@@ -29,14 +30,20 @@ def cm_to_px(cm: float) -> int:
     return round(cm / 2.54 * PRINT_DPI)
 
 
-def generate(marker_cm: float):
+def _raw_marker_array(marker_cm: float) -> np.ndarray:
+    """The bare black/white ArUco pattern, no border or label."""
     marker_px = cm_to_px(marker_cm)
-    border_px = cm_to_px(BORDER_CM)
-    label_px  = cm_to_px(LABEL_CM)
-
     aruco_dict = cv2.aruco.getPredefinedDictionary(DICT_TYPE)
     marker_img = np.zeros((marker_px, marker_px), dtype=np.uint8)
     cv2.aruco.generateImageMarker(aruco_dict, MARKER_ID, marker_px, marker_img, 1)
+    return marker_img
+
+
+def build_marker_image(marker_cm: float) -> Image.Image:
+    """Render the bordered, labeled ArUco marker for the given physical size."""
+    marker_img = _raw_marker_array(marker_cm)
+    border_px = cm_to_px(BORDER_CM)
+    label_px  = cm_to_px(LABEL_CM)
 
     bordered = cv2.copyMakeBorder(
         marker_img,
@@ -48,14 +55,26 @@ def generate(marker_cm: float):
     label = f"Print at 100% / actual size -- black square must be exactly {int(marker_cm)} cm x {int(marker_cm)} cm"
     cv2.putText(
         bordered, label,
-        (border_px, marker_px + border_px + label_px - 4),
+        (border_px, marker_img.shape[0] + border_px + label_px - 4),
         cv2.FONT_HERSHEY_SIMPLEX, 0.55, 0, 1, cv2.LINE_AA,
     )
 
+    return Image.fromarray(bordered)
+
+
+def marker_square_png_bytes(marker_cm: float) -> bytes:
+    """The bare marker square as PNG bytes, for printing inline from the web app."""
+    pil_img = Image.fromarray(_raw_marker_array(marker_cm))
+    buf = io.BytesIO()
+    pil_img.save(buf, format="PNG", dpi=(PRINT_DPI, PRINT_DPI))
+    return buf.getvalue()
+
+
+def generate(marker_cm: float):
+    pil_img = build_marker_image(marker_cm)
+
     out_dir = Path("marker")
     out_dir.mkdir(parents=True, exist_ok=True)
-
-    pil_img = Image.fromarray(bordered)
 
     png_path = out_dir / f"marker_{int(marker_cm)}cm.png"
     pil_img.save(str(png_path), dpi=(PRINT_DPI, PRINT_DPI))
