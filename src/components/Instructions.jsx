@@ -1,5 +1,4 @@
 import BrandBar from './BrandBar.jsx'
-import tcSymbol from '../assets/TC_Symbol_RedBlue.png'
 
 const STEPS = [
   {
@@ -33,7 +32,6 @@ export default function Instructions({ onStart }) {
           <h1>Setup</h1>
           <p className="instructions-sub">Follow these steps before capturing</p>
         </div>
-        <img src={tcSymbol} alt="Triple Crown Sports" className="tc-mark" />
       </div>
 
       <div className="instructions-body">

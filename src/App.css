@@ -533,6 +533,7 @@ h1, h2, h3 {
   padding: 12px 20px;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   flex-shrink: 0;
 }
 
@@ -542,8 +543,19 @@ h1, h2, h3 {
   display: block;
 }
 
+.tc-mark-badge {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--cream);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
 .tc-mark {
-  height: 28px;
+  height: 20px;
   width: auto;
   flex-shrink: 0;
 }

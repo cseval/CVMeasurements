@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import BrandBar from './BrandBar.jsx'
-import tcSymbol from '../assets/TC_Symbol_RedBlue.png'
 
 const GROUPS = [
   {
@@ -67,7 +66,6 @@ export default function AdditionalInfo({ rowId, athlete, onDone }) {
       <BrandBar />
       <div className="results-header">
         <h1>Additional Info</h1>
-        <img src={tcSymbol} alt="Triple Crown Sports" className="tc-mark" />
       </div>
 
       <div className="results-body">
