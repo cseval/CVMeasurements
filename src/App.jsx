@@ -67,7 +67,7 @@ export default function App() {
     return <Instructions onStart={() => setScreen('athlete')} />
   }
   if (screen === 'athlete') {
-    return <AthleteSelect onSelect={handleAthleteSelect} />
+    return <AthleteSelect onSelect={handleAthleteSelect} onBack={() => setScreen('instructions')} />
   }
   if (screen === 'camera') {
     return <Camera onCapture={handleCapture} onBack={() => setScreen('athlete')} disabled={processing} />

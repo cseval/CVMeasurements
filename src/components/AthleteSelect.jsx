@@ -3,7 +3,7 @@ import BrandBar from './BrandBar.jsx'
 
 const MARKER_SIZES = [12, 16, 20]
 
-export default function AthleteSelect({ onSelect }) {
+export default function AthleteSelect({ onSelect, onBack }) {
   const [query,         setQuery]         = useState('')
   const [events,        setEvents]        = useState([])
   const [selectedEvent, setSelectedEvent] = useState(null)
@@ -79,6 +79,7 @@ export default function AthleteSelect({ onSelect }) {
     <div className="athlete-screen">
       <BrandBar />
       <div className="athlete-header">
+        <button className="header-back-btn" onClick={onBack} aria-label="Back">←</button>
         <h1>Setup</h1>
       </div>
 
