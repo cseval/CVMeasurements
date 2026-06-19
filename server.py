@@ -13,7 +13,7 @@ from fastapi.responses import Response
 from pydantic import BaseModel
 from pipeline import run
 from db import search_athletes, search_events, get_event_roster, get_athlete_status, upsert_measurement, update_additional
-from generate_marker import marker_square_png_bytes, ALL_SIZES
+from generate_marker import marker_square_png_bytes, marker_pdf_bytes, ALL_SIZES
 
 app = FastAPI()
 app.add_middleware(
@@ -110,6 +110,15 @@ async def marker(cm: float):
         raise HTTPException(status_code=400, detail=f"Marker size must be one of {ALL_SIZES}")
     png_bytes = marker_square_png_bytes(cm)
     return Response(content=png_bytes, media_type="image/png")
+
+
+@app.get("/api/marker/{cm}/pdf")
+async def marker_pdf(cm: float):
+    if cm not in ALL_SIZES:
+        raise HTTPException(status_code=400, detail=f"Marker size must be one of {ALL_SIZES}")
+    pdf_bytes = marker_pdf_bytes(cm)
+    headers = {"Content-Disposition": f'inline; filename="marker_{int(cm)}cm.pdf"'}
+    return Response(content=pdf_bytes, media_type="application/pdf", headers=headers)
 
 
 @app.post("/api/measure")
