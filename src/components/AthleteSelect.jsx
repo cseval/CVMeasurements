@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import BrandBar from './BrandBar.jsx'
 
 const MARKER_SIZES = [12, 16, 20]
@@ -12,7 +12,6 @@ export default function AthleteSelect({ onSelect, onBack }) {
   const [rosterLoading, setRosterLoading] = useState(false)
   const [error,         setError]         = useState(null)
   const [markerSize,    setMarkerSize]    = useState(20)
-  const markerImgRef                      = useRef(null)
 
   const searchEvents = useCallback(async (q) => {
     if (!q.trim()) { setEvents([]); return }
@@ -51,13 +50,11 @@ export default function AthleteSelect({ onSelect, onBack }) {
   }
 
   function handlePrintMarker() {
-    const img = markerImgRef.current
-    if (!img) return
-    if (img.complete) {
-      window.print()
-    } else {
-      img.onload = () => window.print()
-    }
+    // A PDF's page size IS the marker's physical size, so printing at
+    // "Actual size" in the browser's PDF viewer is exact. Printing an HTML
+    // page sized with CSS units is not reliable -- printer drivers can
+    // rescale it regardless of the print dialog's stated scale.
+    window.open(`${import.meta.env.VITE_API_URL}/api/marker/${markerSize}/pdf`, '_blank')
   }
 
   function handleChangeEvent() {
@@ -103,6 +100,9 @@ export default function AthleteSelect({ onSelect, onBack }) {
               Print Marker
             </button>
           </div>
+          <p className="athlete-hint">
+            Opens a PDF in a new tab — print it at "Actual size" (not "Fit to page") for an exact {markerSize} cm marker.
+          </p>
         </div>
 
         <div className="setup-divider" />
@@ -177,19 +177,6 @@ export default function AthleteSelect({ onSelect, onBack }) {
           Test Mode
         </button>
 
-      </div>
-
-      <div className="marker-print-sheet">
-        <img
-          ref={markerImgRef}
-          src={`${import.meta.env.VITE_API_URL}/api/marker/${markerSize}`}
-          alt=""
-          className="marker-print-img"
-          style={{ width: `${markerSize}cm`, height: `${markerSize}cm` }}
-        />
-        <p className="marker-print-label">
-          Print at 100% / actual size — black square must measure exactly {markerSize} cm × {markerSize} cm
-        </p>
       </div>
     </div>
   )
