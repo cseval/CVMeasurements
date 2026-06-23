@@ -438,6 +438,32 @@ h1, h2, h3 {
 .measurement-card.hand .value      { color: var(--measure-hand); }
 .measurement-card.missing .value   { color: var(--text-muted); font-size: 16px; }
 
+.measurement-input {
+  font-family: var(--font-mono);
+  font-size: 22px;
+  font-weight: 700;
+  text-align: right;
+  border: none;
+  background: transparent;
+  width: 90px;
+  color: var(--text-primary);
+}
+
+.measurement-input:focus {
+  outline: none;
+}
+
+.measurement-card.height .measurement-input    { color: var(--measure-height); }
+.measurement-card.wingspan .measurement-input  { color: var(--measure-wingspan); }
+.measurement-card.hand .measurement-input      { color: var(--measure-hand); }
+
+.manual-entry-hint {
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--text-muted);
+  padding: 0 4px;
+}
+
 .scale-note {
   font-family: var(--font-mono);
   font-size: 12px;
