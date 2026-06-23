@@ -1020,6 +1020,7 @@ h1, h2, h3 {
   font-size: 16px;
   outline: none;
   -moz-appearance: textfield;
+  appearance: textfield;
 }
 
 .form-input::-webkit-outer-spin-button,
