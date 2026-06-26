@@ -2,6 +2,7 @@ import { useRef, useEffect, useState, useCallback } from 'react';
 
 export default function Camera({ onCapture, disabled }) {
   const videoRef = useRef(null);
+  const fileInputRef = useRef(null);
   const [streamReady, setStreamReady] = useState(false);
   const [cameraError, setCameraError] = useState(null);
   const [countdown, setCountdown] = useState(null);
@@ -32,6 +33,12 @@ export default function Camera({ onCapture, disabled }) {
     canvas.height = video.videoHeight;
     canvas.getContext('2d').drawImage(video, 0, 0);
     canvas.toBlob((blob) => onCapture(blob), 'image/jpeg', 0.92);
+  }, [onCapture]);
+
+  const handleLibraryChange = useCallback((e) => {
+    const file = e.target.files?.[0];
+    if (file) onCapture(file);
+    e.target.value = '';
   }, [onCapture]);
 
   const handleCapture = useCallback(() => {
@@ -93,8 +100,21 @@ export default function Camera({ onCapture, disabled }) {
             {disabled ? '…' : 'CAP'}
           </button>
 
-          {/* spacer to keep CAP centered */}
-          <div style={{ width: 52 }} />
+          <button
+            className="library-btn"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={disabled || isCounting}
+          >
+            LIB
+          </button>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            style={{ display: 'none' }}
+            onChange={handleLibraryChange}
+          />
         </div>
 
         {disabled && (
