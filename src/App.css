@@ -1037,6 +1037,146 @@ h1, h2, h3 {
   opacity: 0.5;
 }
 
+/* ── Camera mode toggle ── */
+.camera-mode-toggle {
+  display: flex;
+  background: rgba(0,0,0,0.5);
+  padding: 6px;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.camera-mode-btn {
+  flex: 1;
+  padding: 9px 0;
+  border-radius: var(--radius);
+  border: none;
+  background: transparent;
+  color: rgba(255,255,255,0.55);
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.camera-mode-btn.active {
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+}
+
+.camera-mode-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ── Photo Library mode ── */
+.library-wrapper {
+  flex: 1;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: #000;
+  overflow: hidden;
+}
+
+.library-pick-area {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 32px;
+}
+
+.library-pick-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 40px 32px;
+  border: 2px dashed rgba(255,255,255,0.25);
+  border-radius: var(--radius-lg);
+  background: rgba(255,255,255,0.06);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  width: 100%;
+  max-width: 320px;
+}
+
+.library-pick-card:active {
+  background: rgba(255,255,255,0.12);
+  border-color: rgba(255,255,255,0.45);
+}
+
+.library-pick-icon {
+  color: rgba(255,255,255,0.6);
+}
+
+.library-pick-label {
+  font-family: var(--font-body);
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.library-pick-sub {
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: rgba(255,255,255,0.5);
+}
+
+.library-preview-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.library-preview-img {
+  flex: 1;
+  width: 100%;
+  object-fit: contain;
+  display: block;
+  min-height: 0;
+}
+
+.library-preview-actions {
+  padding: 20px 24px max(20px, env(safe-area-inset-bottom));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+}
+
+.library-change-btn {
+  padding: 0 20px;
+  height: 52px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.3);
+  color: #fff;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.2s;
+}
+
+.library-change-btn:active {
+  background: rgba(255,255,255,0.25);
+}
+
+.library-change-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.library-use-btn {
+  width: 76px;
+  height: 76px;
+}
+
 /* Error card */
 .error-card {
   background: var(--danger-bg);
