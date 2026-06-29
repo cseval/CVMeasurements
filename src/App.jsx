@@ -44,9 +44,16 @@ export default function App() {
     setScreen('camera')
   }, [])
 
-  const handleContinueToAdditional = useCallback((id) => {
+  const handleContinueToAdditional = useCallback((id, finalValues) => {
     setRowId(id)
+    if (finalValues) {
+      setResults(prev => ({ ...prev, ...finalValues }))
+    }
     setScreen('additional')
+  }, [])
+
+  const handleBackToResults = useCallback(() => {
+    setScreen('results')
   }, [])
 
   const handleAdditionalDone = useCallback(() => {
@@ -78,6 +85,7 @@ export default function App() {
         rowId={rowId}
         athlete={athlete}
         onDone={handleAdditionalDone}
+        onBack={handleBackToResults}
       />
     )
   }
@@ -87,6 +95,7 @@ export default function App() {
       error={error}
       warnings={results?.warnings}
       athlete={athlete}
+      rowId={rowId}
       onRetry={handleRetry}
       onContinue={handleContinueToAdditional}
     />

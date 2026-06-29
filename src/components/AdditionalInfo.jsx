@@ -34,7 +34,7 @@ const GROUPS = [
   },
 ]
 
-export default function AdditionalInfo({ rowId, athlete, onDone }) {
+export default function AdditionalInfo({ rowId, athlete, onDone, onBack }) {
   const [values, setValues]     = useState({})
   const [saveState, setSaveState] = useState('idle') // idle | saving | saved | error
 
@@ -124,6 +124,15 @@ export default function AdditionalInfo({ rowId, athlete, onDone }) {
             >
               Skip
             </button>
+            {onBack && (
+              <button
+                className="adjust-btn"
+                onClick={onBack}
+                disabled={saveState === 'saving'}
+              >
+                Back to Results
+              </button>
+            )}
           </>
         )}
       </div>
