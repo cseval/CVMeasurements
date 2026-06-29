@@ -20,7 +20,7 @@ export default function App() {
     setError(null)
     try {
       const formData = new FormData()
-      formData.append('image', blob, 'capture.jpg')
+      formData.append('image', blob, blob.name || 'capture.jpg')
       formData.append('marker_cm', markerSize)
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/measure`, { method: 'POST', body: formData })
       if (!res.ok) {
