@@ -56,15 +56,15 @@ function compositeAdjusted(debugImageB64, pts, baseScale, imgW, imgH) {
 
 const MANUAL_KEYS = ['height_cm', 'wingspan_cm', 'hand_width_cm']
 
-export default function Results({ results, error, warnings, athlete, onRetry, onContinue }) {
+export default function Results({ results, error, warnings, athlete, rowId, onRetry, onContinue }) {
   const [adjusting, setAdjusting]     = useState(false)
   const [adjustedVals, setAdjusted]   = useState({})
   const [adjustedImage, setAdjImage]  = useState(null)
   const [manualEntry, setManualEntry] = useState(false)
   const [manualDraft, setManualDraft] = useState({})
   const [manualVals, setManualVals]   = useState({})
-  const [saveState, setSaveState]     = useState('idle') // idle | saving | saved | updated | error
-  const [savedRowId, setSavedRowId]   = useState(null)
+  const [saveState, setSaveState]     = useState(rowId ? 'updated' : 'idle') // idle | saving | saved | updated | error
+  const [savedRowId, setSavedRowId]   = useState(rowId ?? null)
   const canvasRef                     = useRef(null)
 
   const canAdjust    = !!(results?.endpoints && results?.raw_image)
@@ -81,6 +81,8 @@ export default function Results({ results, error, warnings, athlete, onRetry, on
       for (const key of Object.keys(updated)) delete next[key]
       return next
     })
+    // A correction after a save needs to be re-saved, so re-arm the Save button.
+    setSaveState(prev => (prev === 'saved' || prev === 'updated') ? 'idle' : prev)
   }
 
   function openManualEntry() {
@@ -104,6 +106,8 @@ export default function Results({ results, error, warnings, athlete, onRetry, on
     }
     setManualVals(next)
     setManualEntry(false)
+    // A correction after a save needs to be re-saved, so re-arm the Save button.
+    setSaveState(prev => (prev === 'saved' || prev === 'updated') ? 'idle' : prev)
   }
 
   function handleManualCancel() {
@@ -304,7 +308,7 @@ export default function Results({ results, error, warnings, athlete, onRetry, on
                   {saveState === 'updated' ? 'Measurements updated' : 'Measurements saved'}
                 </div>
                 {onContinue && (
-                  <button className="retry-btn" onClick={() => onContinue(savedRowId)}>
+                  <button className="retry-btn" onClick={() => onContinue(savedRowId, display)}>
                     Add Additional Info
                   </button>
                 )}
