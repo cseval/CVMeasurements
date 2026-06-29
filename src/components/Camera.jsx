@@ -2,13 +2,17 @@ import { useRef, useEffect, useState, useCallback } from 'react';
 import BrandBar from './BrandBar.jsx';
 
 export default function Camera({ onCapture, onBack, disabled }) {
-  const videoRef = useRef(null);
+  const videoRef    = useRef(null);
+  const fileRef     = useRef(null);
+  const [mode, setMode]           = useState('camera');
   const [streamReady, setStreamReady] = useState(false);
   const [cameraError, setCameraError] = useState(null);
-  const [countdown, setCountdown] = useState(null);
+  const [countdown, setCountdown]   = useState(null);
   const [useCountdown, setUseCountdown] = useState(false);
+  const [preview, setPreview]       = useState(null); // { url, blob }
 
   useEffect(() => {
+    if (mode !== 'camera') return;
     let stream;
     navigator.mediaDevices.getUserMedia({
       video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } },
@@ -23,7 +27,7 @@ export default function Camera({ onCapture, onBack, disabled }) {
     .catch((err) => setCameraError(err.message));
 
     return () => stream?.getTracks().forEach((t) => t.stop());
-  }, []);
+  }, [mode]);
 
   const shoot = useCallback(() => {
     const video = videoRef.current;
@@ -54,62 +58,156 @@ export default function Camera({ onCapture, onBack, disabled }) {
     }, 1000);
   }, [useCountdown, shoot]);
 
-  if (cameraError) {
-    return (
-      <div className="camera-screen">
-        <BrandBar />
-        <div style={{ padding: 24 }}>
-          <button className="camera-back-btn" style={{ position: 'static', marginBottom: 16 }} onClick={onBack} aria-label="Back">×</button>
-          <div className="error-card">Camera error: {cameraError}</div>
-        </div>
-      </div>
-    );
-  }
+  const handleFileChange = useCallback((e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    setPreview({ url, blob: file });
+  }, []);
+
+  const handleUsePhoto = useCallback(() => {
+    if (!preview) return;
+    onCapture(preview.blob);
+  }, [preview, onCapture]);
+
+  const handleModeSwitch = useCallback((next) => {
+    setMode(next);
+    setPreview(null);
+    setCountdown(null);
+    setCameraError(null);
+    setStreamReady(false);
+    if (fileRef.current) fileRef.current.value = '';
+  }, []);
 
   const isCounting = countdown !== null;
 
   return (
     <div className="camera-screen">
       <BrandBar />
-      <div className="camera-wrapper">
-        <video ref={videoRef} className="camera-video" autoPlay playsInline muted />
 
-        <button className="camera-back-btn" onClick={onBack} disabled={disabled} aria-label="Back">×</button>
-
-        {isCounting && (
-          <div className="countdown-overlay">
-            <span className="countdown-number">{countdown}</span>
-          </div>
-        )}
-
-        <div className="capture-bar">
-          <button
-            className="timer-toggle"
-            onClick={() => setUseCountdown((v) => !v)}
-            disabled={disabled || isCounting}
-          >
-            {useCountdown ? '5s' : 'instant'}
-          </button>
-
-          <button
-            className="capture-btn"
-            onClick={handleCapture}
-            disabled={disabled || !streamReady || isCounting}
-          >
-            {disabled ? '…' : 'CAP'}
-          </button>
-
-          {/* spacer to keep CAP centered */}
-          <div style={{ width: 52 }} />
-        </div>
-
-        {disabled && (
-          <div className="processing-overlay">
-            <div className="spinner" />
-            <p>Measuring…</p>
-          </div>
-        )}
+      <div className="camera-mode-toggle">
+        <button
+          className={`camera-mode-btn${mode === 'camera' ? ' active' : ''}`}
+          onClick={() => handleModeSwitch('camera')}
+          disabled={disabled}
+        >
+          Camera
+        </button>
+        <button
+          className={`camera-mode-btn${mode === 'library' ? ' active' : ''}`}
+          onClick={() => handleModeSwitch('library')}
+          disabled={disabled}
+        >
+          Photo Library
+        </button>
       </div>
+
+      {mode === 'camera' ? (
+        cameraError ? (
+          <div style={{ padding: 24, flex: 1 }}>
+            <button className="camera-back-btn" style={{ position: 'static', marginBottom: 16 }} onClick={onBack} aria-label="Back">×</button>
+            <div className="error-card">Camera error: {cameraError}</div>
+          </div>
+        ) : (
+          <div className="camera-wrapper">
+            <video ref={videoRef} className="camera-video" autoPlay playsInline muted />
+
+            <button className="camera-back-btn" onClick={onBack} disabled={disabled} aria-label="Back">×</button>
+
+            {isCounting && (
+              <div className="countdown-overlay">
+                <span className="countdown-number">{countdown}</span>
+              </div>
+            )}
+
+            <div className="capture-bar">
+              <button
+                className="timer-toggle"
+                onClick={() => setUseCountdown((v) => !v)}
+                disabled={disabled || isCounting}
+              >
+                {useCountdown ? '5s' : 'instant'}
+              </button>
+
+              <button
+                className="capture-btn"
+                onClick={handleCapture}
+                disabled={disabled || !streamReady || isCounting}
+              >
+                {disabled ? '…' : 'CAP'}
+              </button>
+
+              <div style={{ width: 52 }} />
+            </div>
+
+            {disabled && (
+              <div className="processing-overlay">
+                <div className="spinner" />
+                <p>Measuring…</p>
+              </div>
+            )}
+          </div>
+        )
+      ) : (
+        <div className="library-wrapper">
+          <button className="camera-back-btn" style={{ position: 'absolute', top: 16, left: 16, zIndex: 2 }} onClick={onBack} disabled={disabled} aria-label="Back">×</button>
+
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            style={{ display: 'none' }}
+            onChange={handleFileChange}
+          />
+
+          {preview ? (
+            <div className="library-preview-area">
+              <img
+                src={preview.url}
+                alt="Selected photo"
+                className="library-preview-img"
+              />
+              <div className="library-preview-actions">
+                <button
+                  className="library-change-btn"
+                  onClick={() => fileRef.current?.click()}
+                  disabled={disabled}
+                >
+                  Change
+                </button>
+                <button
+                  className="capture-btn library-use-btn"
+                  onClick={handleUsePhoto}
+                  disabled={disabled}
+                >
+                  {disabled ? '…' : 'USE'}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="library-pick-area">
+              <div className="library-pick-card" onClick={() => fileRef.current?.click()}>
+                <div className="library-pick-icon">
+                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                    <polyline points="21 15 16 10 5 21"/>
+                  </svg>
+                </div>
+                <p className="library-pick-label">Choose Photo</p>
+                <p className="library-pick-sub">Tap to open your photo library</p>
+              </div>
+            </div>
+          )}
+
+          {disabled && (
+            <div className="processing-overlay" style={{ position: 'fixed' }}>
+              <div className="spinner" />
+              <p>Measuring…</p>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
