@@ -7,13 +7,15 @@ import AdditionalInfo from './components/AdditionalInfo.jsx'
 import './App.css'
 
 export default function App() {
-  const [screen,     setScreen]   = useState('instructions')
-  const [processing, setProcessing] = useState(false)
-  const [results,    setResults]  = useState(null)
-  const [error,      setError]    = useState(null)
-  const [athlete,    setAthlete]  = useState(null)  // {id, first_name, last_name, existing}
-  const [markerSize, setMarkerSize] = useState(20)
-  const [rowId,      setRowId]    = useState(null)
+  const [screen,         setScreen]        = useState('instructions')
+  const [processing,     setProcessing]    = useState(false)
+  const [results,        setResults]       = useState(null)
+  const [error,          setError]         = useState(null)
+  const [athlete,        setAthlete]       = useState(null)  // {id, first_name, last_name, existing}
+  const [markerSize,     setMarkerSize]    = useState(20)
+  const [rowId,          setRowId]         = useState(null)
+  const [selectedEvent,  setSelectedEvent] = useState(null)
+  const [roster,         setRoster]        = useState([])
 
   const handleCapture = useCallback(async (blob) => {
     setProcessing(true)
@@ -62,6 +64,13 @@ export default function App() {
     setAthlete(null)
     setRowId(null)
     setScreen('athlete')
+    // selectedEvent and roster intentionally preserved so the user lands
+    // back on the same event's roster for the next athlete.
+  }, [])
+
+  const handleEventChange = useCallback((event, eventRoster) => {
+    setSelectedEvent(event)
+    setRoster(eventRoster)
   }, [])
 
   const handleAthleteSelect = useCallback((selected, size) => {
@@ -74,7 +83,15 @@ export default function App() {
     return <Instructions onStart={() => setScreen('athlete')} />
   }
   if (screen === 'athlete') {
-    return <AthleteSelect onSelect={handleAthleteSelect} onBack={() => setScreen('instructions')} />
+    return (
+      <AthleteSelect
+        onSelect={handleAthleteSelect}
+        onBack={() => setScreen('instructions')}
+        initialEvent={selectedEvent}
+        initialRoster={roster}
+        onEventChange={handleEventChange}
+      />
+    )
   }
   if (screen === 'camera') {
     return <Camera onCapture={handleCapture} onBack={() => setScreen('athlete')} disabled={processing} />
