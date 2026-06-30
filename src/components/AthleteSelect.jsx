@@ -3,11 +3,11 @@ import BrandBar from './BrandBar.jsx'
 
 const MARKER_SIZES = [12, 16, 20]
 
-export default function AthleteSelect({ onSelect, onBack }) {
+export default function AthleteSelect({ onSelect, onBack, initialEvent = null, initialRoster = [], onEventChange }) {
   const [query,         setQuery]         = useState('')
   const [events,        setEvents]        = useState([])
-  const [selectedEvent, setSelectedEvent] = useState(null)
-  const [roster,        setRoster]        = useState([])
+  const [selectedEvent, setSelectedEvent] = useState(initialEvent)
+  const [roster,        setRoster]        = useState(initialRoster)
   const [loading,       setLoading]       = useState(false)
   const [rosterLoading, setRosterLoading] = useState(false)
   const [error,         setError]         = useState(null)
@@ -42,6 +42,7 @@ export default function AthleteSelect({ onSelect, onBack }) {
       const res  = await fetch(`${import.meta.env.VITE_API_URL}/api/events/${event.id}/roster`)
       const data = await res.json()
       setRoster(data)
+      onEventChange?.(event, data)
     } catch {
       setError('Could not load roster')
     } finally {
@@ -60,6 +61,7 @@ export default function AthleteSelect({ onSelect, onBack }) {
   function handleChangeEvent() {
     setSelectedEvent(null)
     setRoster([])
+    onEventChange?.(null, [])
   }
 
   async function handlePlayerSelect(player) {
