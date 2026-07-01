@@ -3,7 +3,7 @@ import BrandBar from './BrandBar.jsx'
 
 const MARKER_SIZES = [12, 16, 20]
 
-export default function AthleteSelect({ onSelect, onBack, initialEvent = null, initialRoster = [], onEventChange }) {
+export default function AthleteSelect({ onSelect, onBack, initialEvent = null, initialRoster = [], onEventChange, onUnauthorized }) {
   const [query,         setQuery]         = useState('')
   const [events,        setEvents]        = useState([])
   const [selectedEvent, setSelectedEvent] = useState(initialEvent)
@@ -18,7 +18,8 @@ export default function AthleteSelect({ onSelect, onBack, initialEvent = null, i
     setLoading(true)
     setError(null)
     try {
-      const res  = await fetch(`${import.meta.env.VITE_API_URL}/api/events?q=${encodeURIComponent(q)}`)
+      const res  = await fetch(`${import.meta.env.VITE_API_URL}/api/events?q=${encodeURIComponent(q)}`, { credentials: 'include' })
+      if (res.status === 401) { onUnauthorized?.(); return }
       const data = await res.json()
       setEvents(data)
     } catch {
@@ -39,7 +40,8 @@ export default function AthleteSelect({ onSelect, onBack, initialEvent = null, i
     setRosterLoading(true)
     setError(null)
     try {
-      const res  = await fetch(`${import.meta.env.VITE_API_URL}/api/events/${event.id}/roster`)
+      const res  = await fetch(`${import.meta.env.VITE_API_URL}/api/events/${event.id}/roster`, { credentials: 'include' })
+      if (res.status === 401) { onUnauthorized?.(); return }
       const data = await res.json()
       setRoster(data)
       onEventChange?.(event, data)
@@ -66,7 +68,8 @@ export default function AthleteSelect({ onSelect, onBack, initialEvent = null, i
 
   async function handlePlayerSelect(player) {
     try {
-      const res    = await fetch(`${import.meta.env.VITE_API_URL}/api/athletes/${player.id}/status`)
+      const res    = await fetch(`${import.meta.env.VITE_API_URL}/api/athletes/${player.id}/status`, { credentials: 'include' })
+      if (res.status === 401) { onUnauthorized?.(); return }
       const status = await res.json()
       onSelect({ ...player, status, event_id: selectedEvent.id }, markerSize)
     } catch {
