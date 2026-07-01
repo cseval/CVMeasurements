@@ -56,7 +56,7 @@ function compositeAdjusted(debugImageB64, pts, baseScale, imgW, imgH) {
 
 const MANUAL_KEYS = ['height_cm', 'wingspan_cm', 'hand_width_cm']
 
-export default function Results({ results, error, warnings, athlete, rowId, onRetry, onContinue }) {
+export default function Results({ results, error, warnings, athlete, rowId, onRetry, onContinue, onUnauthorized }) {
   const [adjusting, setAdjusting]     = useState(false)
   const [adjustedVals, setAdjusted]   = useState({})
   const [adjustedImage, setAdjImage]  = useState(null)
@@ -136,6 +136,7 @@ export default function Results({ results, error, warnings, athlete, rowId, onRe
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/save`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           player_id:     athlete.id,
           first_name:    athlete.first_name,
@@ -147,6 +148,7 @@ export default function Results({ results, error, warnings, athlete, rowId, onRe
           user_id:       athlete.user_id ?? null,
         }),
       })
+      if (res.status === 401) { onUnauthorized?.(); return }
       if (!res.ok) {
         const body = await res.json().catch(() => ({}))
         throw new Error(body.detail || `Server error ${res.status}`)
